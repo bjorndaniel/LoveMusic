@@ -1,0 +1,29 @@
+@page "/callback"
+@inject NavigationManager Navigation
+@inject Blazored.LocalStorage.ILocalStorageService LocalStore
+@inject HttpClient Http
+
+@code{
+    private string Token { get; set; }
+    private SpotifyUser User { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        var query = uri.ToString().Split("#").LastOrDefault();
+        if (QueryHelpers.ParseQuery(query).TryGetValue("access_token", out var token))
+        {
+            Token = token;
+            await LocalStore.SetItemAsync("SpotifyToken", token.FirstOrDefault());
+            await GetUser();
+        }
+        Navigation.NavigateTo("/creator");
+    }
+    private async Task GetUser()
+    {
+        Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Token);
+        var result = await Http.GetStringAsync($"https://api.spotify.com/v1/me");
+        User = JsonConvert.DeserializeObject<SpotifyUser>(result);
+        await LocalStore.SetItemAsync("SpotifyUser", User);
+    }
+}

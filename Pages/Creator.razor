@@ -1,0 +1,186 @@
+@page "/creator"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject Blazored.LocalStorage.ILocalStorageService LocalStore
+@inject IConfiguration Config
+@inject SpotifyService Spotify;
+@inject LastFmService LastFm;
+
+<main role="main" class="container">
+    <div class="row">
+        <div class="col">
+            <h2>Playlist creator</h2>
+        </div>
+    </div>
+    <div class="row justify-content-center @(ShowUser)">
+        <div class="col-sm-12 col-md-8 col-lg-6">
+            <form>
+                <div class="form-group">
+                    <label for="lastfmusername">last.fm username</label>
+                    <input type="text" class="form-control" id="lastfmusername" aria-describedby="lfmuserhelp" @bind="UserName" placeholder="Enter last.fm username">
+                    <small id="lfmuserhelp" class="form-text text-muted">Enter the username for a last.fm user.</small>
+                </div>
+                <div class="form-group">
+                    <div class="form-group">
+                        <label for="lfmtype">Playlist type</label>
+                        <select class="form-control" id="lfmtype" aria-describedby="lfmtypehelp" @bind="SelectedType" >
+                            @foreach(var name in Enum.GetNames(typeof(PlaylistType)))
+                            {
+                                <option value="@name">@(Extensions.GetAttributeNameProperty<PlaylistType, DisplayAttribute>(name))</option>
+                            }
+                        </select>
+                        <small id="lfmtypehelp" class="form-text text-muted">Select the type of playlist to load.</small>
+
+                        </div>
+                </div>
+                <button disabled="@string.IsNullOrWhiteSpace(UserName)" @onclick="LoadLfmPlaylist" @onclick:preventDefault class="btn btn-success">Load last.fm playlist</button>
+            </form>
+        </div>
+    </div>
+    <div class="row justify-content-center @(ShowCreate)">
+        <div class="col-sm-12 col-md-8 col-lg-6">
+            <p class="lead">
+                The playlist contains @TotalTracks tracks.
+            </p>
+            <p class="lead">
+                 Select how many you want to add to Spotify
+            </p>
+              <form>
+                <div class="form-group">
+                    <label for="numberoftracks">Number of tracks</label>
+                    <input type="number" class="form-control" id="numberoftracks" aria-describedby="numberoftrackshelp" @bind="@ToAdd" placeholder="Number of tracks to add">
+                    <small id="numberoftrackshelp" class="form-text text-muted">Select a number lower than or equal to @TotalTracks.</small>
+                </div>
+                <div class="form-group">
+                    <div class="form-group">
+                        <label for="spotifyplname">Playlist name</label>
+                        <input type="text" class="form-control" id="spotifyplname" aria-describedby="spotifyplnamehelp" @bind="@PlaylistName" placeholder="Playlist name">
+                        <small id="spotifyplnamehelp" class="form-text text-muted">Type a name for your Spotify playlist.</small>
+                    </div>
+                </div>
+                <button  @onclick="GoBack" @onclick:preventDefault class="btn btn-primary">Back</button>
+                <button disabled="@CreateDisabled" type="submit" @onclick="CreateSpotifyPlaylist" @onclick:preventDefault class="btn btn-success">Create Spotify playlist</button>
+            </form>
+        </div>
+
+    </div>
+    <br />
+      <div class="row justify-content-center @(ShowResult)">
+            <div class="col">
+                @foreach(var line in ResultMessages)
+                {
+                    <p class="lead">@line</p>
+                }
+            </div>
+        </div>
+   
+       <div class="row @(ShowLoading)">
+                <div class="col text-center ">
+                    <br />
+                    <p class="lead">@LoadingText</p>
+                    <p class="lead">@LoadingMessage</p>
+                    <div class="row css-load-parent-small css-load-scale">
+                        <div class="col text-center my-auto">
+                            <div class="cssload-loader-inner-small">
+                                <div class="cssload-cssload-loader-line-wrap-wrap">
+                                    <div class="cssload-loader-line-wrap"></div>
+                                </div>
+                                <div class="cssload-cssload-loader-line-wrap-wrap">
+                                    <div class="cssload-loader-line-wrap"></div>
+                                </div>
+                                <div class="cssload-cssload-loader-line-wrap-wrap">
+                                    <div class="cssload-loader-line-wrap"></div>
+                                </div>
+                                <div class="cssload-cssload-loader-line-wrap-wrap">
+                                    <div class="cssload-loader-line-wrap"></div>
+                                </div>
+                                <div class="cssload-cssload-loader-line-wrap-wrap">
+                                    <div class="cssload-loader-line-wrap"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+</main>
+@code{
+    private PlaylistType SelectedType { get; set; }
+    private string UserName { get; set; }
+    private string ShowUser { get; set; }
+    private string ShowCreate { get; set; } = "hide";
+    private string ShowLoading { get; set; } = "hide";
+    private string ShowResult { get; set; } = "hide";
+    private long TotalTracks { get; set; }
+    private int? ToAdd { get; set; }
+    private string PlaylistName { get; set; }
+    private int NotFound { get; set; }
+    private string LoadingMessage { get; set; }
+    private string LoadingText { get; set; }
+    private bool CreateDisabled => !(ToAdd > 0 && !string.IsNullOrEmpty(PlaylistName));
+    private List<string> ResultMessages { get; set; } = new List<string>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var token = await LocalStore.GetItemAsync<string>("SpotifyToken");
+        if (token == null)
+        {
+            Navigation.NavigateTo("/");
+        }
+        LastFm.RequestRefresh += UpdateUI;
+        Spotify.RequestRefresh += UpdateUI;
+        Spotify.CreationDone += UpdateUI;
+    }
+
+    private async Task LoadLfmPlaylist()
+    {
+        ResultMessages.Clear();
+        ShowResult = "hide";
+        ShowUser = "hide";
+        LoadingText = "Loading playlist";
+        ShowLoading = "";
+        ShowCreate = "hide";
+        TotalTracks = await LastFm.GetTrackCount(SelectedType, UserName);
+        ShowUser = "hide";
+        ShowCreate = string.Empty;
+        ShowLoading = "hide";
+    }
+
+    private void GoBack()
+    {
+        LoadingMessage = "...";
+        UserName = string.Empty;
+        SelectedType = PlaylistType.LovedTracks;
+        ShowCreate = "hide";
+        ShowUser = string.Empty;
+        PlaylistName = string.Empty;
+        ToAdd = null;
+    }
+
+    private async Task CreateSpotifyPlaylist()
+    {
+        LoadingText = "Creating playlist";
+        LoadingMessage = "...";
+        ShowLoading = "";
+        ShowCreate = "hide";
+        var lastFmTracks = await LastFm.GetTracksList(SelectedType, UserName, ToAdd??1);
+        await Spotify.CreatePlaylist(PlaylistName, lastFmTracks);
+        GoBack();
+    }
+
+    private async Task UpdateUI(object sender, MessageEventArgs args)
+    {
+        switch (args.Type)
+        {
+            case UIUpdateType.Done:
+                ResultMessages.AddRange(args.Messages);
+                ShowResult = string.Empty;
+                ShowLoading = "hide";
+                break;
+            default:
+                LoadingMessage = args.Messages.FirstOrDefault();
+                StateHasChanged();
+                await Task.Delay(1);
+                break;
+        }
+    }
+}

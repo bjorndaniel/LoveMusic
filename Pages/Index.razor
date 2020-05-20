@@ -1,0 +1,22 @@
+﻿@page "/"
+@inject IConfiguration Config
+@inject HttpClient Http
+@inject NavigationManager Navigation
+<main role="main" class="inner cover">
+    <h1 class="cover-heading">Bringing your last.fm lists to Spotify.</h1>
+    <p class="lead">Love music can fetch playlists for a last.fm user and create Spotify playlists for them.</p>
+    <p class="lead">
+         All that is required is that you give permission for Love music to integrate with Spotify.
+    </p>
+    <p class="lead">
+        <button  class="btn btn-lg btn-success" @onclick="Connect">Connect with Spotify</button>
+    </p>
+</main>
+@code{
+    public void Connect()
+    {
+        var clientId = Config["Client"];
+        var redirectUrl = Config["Redirect"];
+        Navigation.NavigateTo($"https://accounts.spotify.com/authorize?client_id={clientId}&redirect_uri={redirectUrl}&scope=playlist-modify-public%20playlist-modify-private%20&response_type=token&state=123");
+    }
+}
