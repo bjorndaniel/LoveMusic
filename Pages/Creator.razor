@@ -24,10 +24,9 @@
                     <div class="form-group">
                         <label for="lfmtype">Playlist type</label>
                         <select class="form-control" id="lfmtype" aria-describedby="lfmtypehelp" @bind="SelectedType" >
-                            @foreach(var name in Enum.GetNames(typeof(PlaylistType)))
-                            {
-                                <option value="@name">@(Extensions.GetAttributeNameProperty<PlaylistType, DisplayAttribute>(name))</option>
-                            }
+                            <option value="@PlaylistType.LovedTracks.ToString()">Loved tracks</option>
+                            <option value="@PlaylistType.TopTracks.ToString()">Top tracks</option>
+                            <option value="@PlaylistType.RecentTracks.ToString()">Recent tracks</option>
                         </select>
                         <small id="lfmtypehelp" class="form-text text-muted">Select the type of playlist to load.</small>
 
