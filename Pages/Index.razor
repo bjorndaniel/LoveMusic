@@ -30,10 +30,6 @@
             Navigation.NavigateTo("/creator");
         }
         var existingToken = await LocalStore.GetItemAsync<string>("SpotifyToken");
-        if (existingToken != null)
-        {
-            Navigation.NavigateTo("/creator");
-        }
     }
     private async Task GetUser()
     {
