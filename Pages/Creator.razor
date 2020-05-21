@@ -3,8 +3,9 @@
 @inject NavigationManager Navigation
 @inject Blazored.LocalStorage.ILocalStorageService LocalStore
 @inject IConfiguration Config
-@inject SpotifyService Spotify;
-@inject LastFmService LastFm;
+@inject SpotifyService Spotify
+@inject LastFmService LastFm
+@inject IToastService Toast
 
 <main role="main" class="container">
     <div class="row">
@@ -115,7 +116,7 @@
     private int NotFound { get; set; }
     private string LoadingMessage { get; set; }
     private string LoadingText { get; set; }
-    private bool CreateDisabled => !(ToAdd > 0 && !string.IsNullOrEmpty(PlaylistName));
+    private bool CreateDisabled => !(TotalTracks > 0 && ToAdd > 0 && !string.IsNullOrEmpty(PlaylistName));
     private List<string> ResultMessages { get; set; } = new List<string>();
 
     protected override async Task OnInitializedAsync()
@@ -123,6 +124,7 @@
         var token = await LocalStore.GetItemAsync<string>("SpotifyToken");
         if (token == null)
         {
+            Toast.ShowError("No Spotify token found. Please click Connect with Spotify");
             Navigation.NavigateTo("/");
         }
         LastFm.RequestRefresh += UpdateUI;
@@ -139,8 +141,18 @@
         ShowLoading = "";
         ShowCreate = "hide";
         TotalTracks = await LastFm.GetTrackCount(SelectedType, UserName);
-        ShowUser = "hide";
-        ShowCreate = string.Empty;
+        if(TotalTracks == 0)
+        {
+            Toast.ShowWarning("No tracks found. Please try again.");
+            ShowUser = string.Empty;
+            UserName = string.Empty;
+        }
+        else
+        {
+            ShowUser = "hide";
+            ShowCreate = string.Empty;
+        }
+        
         ShowLoading = "hide";
     }
 

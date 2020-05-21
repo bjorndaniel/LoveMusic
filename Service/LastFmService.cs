@@ -45,10 +45,10 @@ namespace LoveMusic
                 returnValue.AddRange(GetTracksResult(type, result).Tracks);
                 if (returnValue.Count % 50 == 0)
                 {
-                    RequestRefresh?.Invoke(this, new MessageEventArgs 
+                    RequestRefresh?.Invoke(this, new MessageEventArgs
                     {
-                         Messages = new List<string> { $"{returnValue.Count} of {nrToGet} fetched." },
-                         Type = UIUpdateType.Processing 
+                        Messages = new List<string> { $"{returnValue.Count} of {nrToGet} fetched." },
+                            Type = UIUpdateType.Processing
                     });
                 }
 
@@ -60,8 +60,12 @@ namespace LoveMusic
         {
             var method = Extensions.GetAttributeNameProperty<PlaylistType, LastFmMethod>(type.ToString());
             var url = string.Format(LastFmUrl, method, lastFmUser, _apiKey, 1, 1);
-            var result = await _client.GetStringAsync(url);
-            return GetTracksResult(type, result).Attributes.TotalTracks;
+            var result = await _client.GetAsync(url);
+            if (result.IsSuccessStatusCode)
+            {
+                return GetTracksResult(type, await result.Content.ReadAsStringAsync()).Attributes.TotalTracks;
+            }
+            return 0;
         }
 
         private LastFmTracksList GetTracksResult(PlaylistType type, string result)
