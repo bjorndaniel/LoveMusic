@@ -1,0 +1,23 @@
+@page "/disconnect"
+@inject NavigationManager Navigation
+@inject Blazored.LocalStorage.ILocalStorageService LocalStore
+@inject IToastService Toast
+
+<main role="main" class="inner cover">
+    <h1 class="cover-heading">Disconnect</h1>
+    <p class="lead">Click the button below to remove the connected Spotify user.</p>
+    <p class="lead">You can easily reconnect from the start page again.</p>
+    <p class="lead">
+        <button  class="btn btn-lg btn-danger" @onclick="Remove">Disconnect from Spotify</button>
+    </p>
+</main>
+
+@code{
+    public async Task Remove()
+    {
+        LocalStore.RemoveItemAsync("SpotifyUser");
+        LocalStore.RemoveItemAsync("SpotifyToken");
+        Toast.ShowSuccess("Successfulley removed Spotify connection");
+        Navigation.NavigateTo($"/");
+    }
+}
