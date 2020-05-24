@@ -32,6 +32,7 @@ namespace LoveMusic
             var result = await _client.GetStringAsync(url);
             var lfmResult = GetTracksResult(type, result);
             var totalTracks = lfmResult.Attributes.TotalTracks;
+            nrToGet = (int) totalTracks < nrToGet ? (int) totalTracks : nrToGet;
             returnValue.AddRange(lfmResult.Tracks);
             while (returnValue.Count < nrToGet)
             {

@@ -1,0 +1,92 @@
+@page "/player"
+@inject Blazored.LocalStorage.ILocalStorageService LocalStore
+@inject HttpClient Http
+@inject SpotifyService Spotify
+@inject IJSRuntime JSRuntime
+
+<main role="main" class="container">
+    <div class="row">
+        <div class="col">
+            <h2>Playlist @Playlist?.Name</h2>
+        </div>
+    </div>
+    <br />
+    <div class="row">
+        <div class="col">
+            <img src="@ImageUrl"  class="cover-art"/>
+        </div>
+    </div>
+    <br />
+    <div class="row ">
+        <div class="col">
+            <h4>@NowPlaying</h4>  
+        </div>
+    </div>
+    <br />
+    <div class="row">
+        <div class="col">
+            <div class="btn-group">
+                <a href="#" @onclick:preventDefault @onclick="Back" class="btn btn-dark"><i class="oi oi-media-step-backward"></i></a>
+                <a href="#" @onclick:preventDefault @onclick="TogglePlay" class="btn btn-dark"><i class="oi @PlayIcon"></i></a>
+                <a href="#" @onclick:preventDefault @onclick="Forward" class="btn btn-dark"><i class="oi oi-media-step-forward"></i></a>
+            </div>
+        </div>
+    </div>
+</main>
+
+@code {
+
+    private SpotifyPlaylist Playlist {get;set;}
+    private string ImageUrl {get;set;}
+    private string NowPlaying {get;set;} = "";
+    private bool IsPlaying {get;set;}
+    private string PlayIcon => IsPlaying ? "oi-media-pause" : "oi-media-play";
+    private static Func<Task> Update;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Playlist = await LocalStore.GetItemAsync<SpotifyPlaylist>("SpotifyPlaylist");
+        if(Playlist != null)
+        {
+            var images = await Spotify.GetImages(Playlist.Id);
+            if(images?.Any() ?? false)
+            {
+                ImageUrl = images.OrderByDescending(_ => _.Height).FirstOrDefault()?.Url;
+            }
+        }
+        Update = UpdatePlayer;
+        
+    }
+
+    private async Task Back()
+    {
+        Spotify.UpdatePlayer(SpotifyPlayerTask.previous);
+    }
+
+    private async Task TogglePlay()
+    {
+        Spotify.UpdatePlayer(IsPlaying ? SpotifyPlayerTask.pause : SpotifyPlayerTask.play);
+        IsPlaying = !IsPlaying;
+    }
+
+    private async Task Forward()
+    {
+        Spotify.UpdatePlayer(SpotifyPlayerTask.next);
+    }
+
+    private async Task UpdatePlayer()
+    {
+        var context = await LocalStore.GetItemAsync<SpotifyContext>("SpotifyContext");
+        var artist = context.track_window?.current_track?.artists?.FirstOrDefault()?.name;
+        NowPlaying = $"{context?.track_window?.current_track?.name} - {artist}";
+        IsPlaying = !context.paused;
+        StateHasChanged();
+        await Task.Delay(1);
+    }
+
+    [JSInvokable]
+    public static async Task UpdateUI()
+    {
+        await Update.Invoke();
+    }
+}

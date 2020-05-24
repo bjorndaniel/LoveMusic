@@ -18,4 +18,12 @@ namespace LoveMusic
         Processing,
         Done
     }
+
+    public enum SpotifyPlayerTask
+    {
+        play,
+        pause,
+        next,
+        previous
+    }
 }
