@@ -12,24 +12,28 @@ namespace LoveMusic
     public class SpotifyService
     {
         private readonly HttpClient _client;
-        private readonly ILocalStorageService _localStorage;
+        private readonly ILocalStorageService _localStore;
 
-        public SpotifyService(HttpClient client, ILocalStorageService localStorage)
+        private List<SpotifyTrack> _addedTracks;
+
+        public SpotifyService(HttpClient client, ILocalStorageService localStore)
         {
             _client = client;
-            _localStorage = localStorage;
+            _localStore = localStore;
         }
 
         public event Func<object, MessageEventArgs, Task> RequestRefresh;
+
         public event Func<object, MessageEventArgs, Task> CreationDone;
 
-        public async Task CreatePlaylist(string name, List<LastFmTrack> tracks)
+        public async Task<SpotifyPlaylist> CreatePlaylist(string name, List<LastFmTrack> tracks)
         {
             var notFound = 0;
             var processed = 0;
             var toPost = new List<SpotifyTrack>();
-            var token = await _localStorage.GetItemAsync<string>("SpotifyToken");
-            var user = await _localStorage.GetItemAsync<SpotifyUser>("SpotifyUser");
+            _addedTracks = new List<SpotifyTrack>();
+            var token = await _localStore.GetItemAsync<string>("SpotifyToken");
+            var user = await _localStore.GetItemAsync<SpotifyUser>("SpotifyUser");
             _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
             var playlist = new CreateSpotifyPlaylist
             {
@@ -39,7 +43,7 @@ namespace LoveMusic
             if (!result.IsSuccessStatusCode)
             {
                 RequestRefresh?.Invoke(this, new MessageEventArgs { Messages = new List<string> { "Could not create playlist." } });
-                return;
+                return null;
             }
             var created = JsonConvert.DeserializeObject<SpotifyPlaylist>(await result.Content.ReadAsStringAsync());
             foreach (var lfmTrack in tracks)
@@ -52,6 +56,7 @@ namespace LoveMusic
                 else
                 {
                     toPost.Add(track);
+                    _addedTracks.Add(track);
                 }
                 processed++;
                 if (toPost.Count == 10)
@@ -81,6 +86,7 @@ namespace LoveMusic
                         $"{notFound} tracks could not be found on Spotify.",
                     }
             });
+            return created;
         }
 
         public async Task<SpotifyTrack> SearchTrack(string artist, string track)
@@ -106,5 +112,40 @@ namespace LoveMusic
             };
         }
 
+        public async Task Play(string playlistUri)
+        {
+            var token = await _localStore.GetItemAsync<string>("SpotifyToken");
+            var player = await _localStore.GetItemAsync<string>("SpotifyPlayerId");
+            _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var json = new SpotifyPlayUri
+            {
+                context_uri = playlistUri
+            };
+            await _client.PutAsJsonAsync($"https://api.spotify.com/v1/me/player/play?device_id={player}", json);
+        }
+
+        public async Task<List<SpotifyPlaylistImage>> GetImages(string playlistId)
+        {
+            var token = await _localStore.GetItemAsync<string>("SpotifyToken");
+            _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var result = await _client.GetStringAsync($"https://api.spotify.com/v1/playlists/{playlistId}/images");
+            return JsonConvert.DeserializeObject<List<SpotifyPlaylistImage>>(result);
+        }
+
+        public async Task UpdatePlayer(SpotifyPlayerTask task)
+        {
+            var token = await _localStore.GetItemAsync<string>("SpotifyToken");
+            _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            switch (task)
+            {
+                case SpotifyPlayerTask.next:
+                case SpotifyPlayerTask.previous:
+                    await _client.PostAsync($"https://api.spotify.com/v1/me/player/{task}", null);
+                    break;
+                default:
+                    await _client.PutAsync($"https://api.spotify.com/v1/me/player/{task}", null);
+                    break;
+            }
+        }
     }
 }

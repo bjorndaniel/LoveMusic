@@ -84,7 +84,7 @@ body {
   border-bottom-color: rgba(255, 255, 255, 0.25);
 }
 
-.nav-masthead .nav-link + .nav-link {
+.nav-masthead .nav-link+.nav-link {
   margin-left: 1rem;
 }
 
@@ -116,6 +116,11 @@ body {
   .nav-masthead {
     float: right;
   }
+
+  .cover-art {
+    max-width: 200px;
+    max-height: 200px;
+  }
 }
 
 @media (min-width: 35em) {
@@ -131,6 +136,11 @@ body {
   .nav-masthead {
     float: right;
   }
+
+  .cover-art {
+    max-width: 350px;
+    max-height: 350px;
+  }
 }
 
 @media (min-width: 60em) {
@@ -145,6 +155,11 @@ body {
 
   .nav-masthead {
     float: right;
+  }
+
+  .cover-art {
+    max-width: 400px;
+    max-height: 400px;
   }
 }
 

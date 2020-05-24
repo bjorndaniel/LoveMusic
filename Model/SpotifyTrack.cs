@@ -39,4 +39,34 @@ namespace LoveMusic
         [JsonProperty("name")]
         public string Name { get; set; }
     }
+
+    public class SpotifyContext
+    {
+        public long duration { get; set; }
+        public long position { get; set; }
+        public bool paused { get; set; }
+
+        public TrackContext track_window { get; set; }
+    }
+
+    public class TrackContext
+    {
+        public Track current_track { get; set; }
+    }
+
+    public class Album
+    {
+        public string name { get; set; }
+    }
+    public class Track
+    {
+        public Album album { get; set; }
+        public List<Artist> artists { get; set; } = new List<Artist>();
+        public string name { get; set; }
+    }
+
+    public class Artist
+    {
+        public string name { get; set; }
+    }
 }
