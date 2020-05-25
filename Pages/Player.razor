@@ -3,6 +3,8 @@
 @inject HttpClient Http
 @inject SpotifyService Spotify
 @inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@inject IToastService Toast
 
 <main role="main" class="container">
     <div class="row">
@@ -13,13 +15,18 @@
     <br />
     <div class="row">
         <div class="col">
-            <img src="@ImageUrl"  class="cover-art"/>
+            <img src="@ImageUrl" class="cover-art"/>
+        </div>
+    </div>
+    <div class="row @NowPlayingClass">
+        <div class="col">
+            <h2>No playlist selected</h2>
         </div>
     </div>
     <br />
     <div class="row ">
         <div class="col">
-            <h4>@NowPlaying</h4>  
+            <h4 >@NowPlaying</h4>  
         </div>
     </div>
     <br />
@@ -35,27 +42,39 @@
 </main>
 
 @code {
-
-    private SpotifyPlaylist Playlist {get;set;}
-    private string ImageUrl {get;set;}
-    private string NowPlaying {get;set;} = "";
-    private bool IsPlaying {get;set;}
+    private SpotifyPlaylist Playlist { get; set; }
+    private string ImageUrl { get; set; }
+    private string NowPlaying { get; set; } = "";
+    private bool IsPlaying { get; set; }
     private string PlayIcon => IsPlaying ? "oi-media-pause" : "oi-media-play";
+    private string NowPlayingClass {get;set;} = "hide";
     private static Func<Task> Update;
-
+    private static Func<Task> PlayAction;
+    private static Func<Task> UnsupportedAction;
     protected override async Task OnInitializedAsync()
     {
-        Playlist = await LocalStore.GetItemAsync<SpotifyPlaylist>("SpotifyPlaylist");
-        if(Playlist != null)
+        var token = await LocalStore.GetItemAsync<string>("SpotifyToken");
+        if (token != null)
         {
-            var images = await Spotify.GetImages(Playlist.Id);
-            if(images?.Any() ?? false)
+            Playlist = await LocalStore.GetItemAsync<SpotifyPlaylist>("SpotifyPlaylist");
+            if (Playlist != null && !string.IsNullOrEmpty(Playlist.Id))
             {
-                ImageUrl = images.OrderByDescending(_ => _.Height).FirstOrDefault()?.Url;
+                var images = await Spotify.GetImages(Playlist.Id);
+                if (images?.Any() ?? false)
+                {
+                    ImageUrl = images.OrderByDescending(_ => _.Height).FirstOrDefault()?.Url;
+                }
             }
+            Update = UpdatePlayer;
+            PlayAction = PlayUri;
+            UnsupportedAction = UnsupportedPlayer;
+            await JSRuntime.InvokeVoidAsync("connectPlayer", token);
         }
-        Update = UpdatePlayer;
-        
+        else
+        {
+            Toast.ShowError("Invalid token. Please reconnect to Spotify");
+            Navigation.NavigateTo("/");
+        }
     }
 
     private async Task Back()
@@ -66,12 +85,16 @@
     private async Task TogglePlay()
     {
         Spotify.UpdatePlayer(IsPlaying ? SpotifyPlayerTask.pause : SpotifyPlayerTask.play);
-        IsPlaying = !IsPlaying;
     }
 
     private async Task Forward()
     {
         Spotify.UpdatePlayer(SpotifyPlayerTask.next);
+    }
+
+    private async Task PlayUri()
+    {
+        await Spotify.Play(Playlist.Uri);
     }
 
     private async Task UpdatePlayer()
@@ -82,6 +105,19 @@
         IsPlaying = !context.paused;
         StateHasChanged();
         await Task.Delay(1);
+    }
+
+    private async Task UnsupportedPlayer()
+    {
+        Toast.ShowError("Unsupported browser. Cannot play on Spotify.");
+        StateHasChanged();
+        await Task.Delay(1);
+    }
+
+    [JSInvokable]
+    public static async Task Unsupported()
+    {
+        await UnsupportedAction.Invoke();
     }
 
     [JSInvokable]

@@ -128,24 +128,48 @@ namespace LoveMusic
         {
             var token = await _localStore.GetItemAsync<string>("SpotifyToken");
             _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-            var result = await _client.GetStringAsync($"https://api.spotify.com/v1/playlists/{playlistId}/images");
-            return JsonConvert.DeserializeObject<List<SpotifyPlaylistImage>>(result);
+            var result = await _client.GetAsync($"https://api.spotify.com/v1/playlists/{playlistId}/images");
+            if (result.IsSuccessStatusCode)
+            {
+                return JsonConvert.DeserializeObject<List<SpotifyPlaylistImage>>(await result.Content.ReadAsStringAsync());
+            }
+            return new List<SpotifyPlaylistImage>();
+
         }
 
         public async Task UpdatePlayer(SpotifyPlayerTask task)
         {
             var token = await _localStore.GetItemAsync<string>("SpotifyToken");
+            var deviceId = await _localStore.GetItemAsync<string>("SpotifyPlayerId");
+
+            var context = await _localStore.GetItemAsync<SpotifyContext>("SpotifyContext");
             _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
             switch (task)
             {
                 case SpotifyPlayerTask.next:
                 case SpotifyPlayerTask.previous:
-                    await _client.PostAsync($"https://api.spotify.com/v1/me/player/{task}", null);
+                    await _client.PostAsync($"https://api.spotify.com/v1/me/player/{task}?device_id={deviceId}", null);
+                    break;
+                case SpotifyPlayerTask.pause:
+                    await _client.PutAsync($"https://api.spotify.com/v1/me/player/{task}?device_id={deviceId}", null);
                     break;
                 default:
-                    await _client.PutAsync($"https://api.spotify.com/v1/me/player/{task}", null);
+                    if (context == null || !context.paused)
+                    {
+                        var playlist = await _localStore.GetItemAsync<SpotifyPlaylist>("SpotifyPlaylist");
+                        await Play(playlist.Uri);
+                    }
+                    else
+                    {
+                        await _client.PutAsync($"https://api.spotify.com/v1/me/player/{task}?device_id={deviceId}", null);
+                    }
                     break;
             }
+        }
+
+        public async Task<SpotifyDevice> GetCurrentDevice()
+        {
+            var token = await _localStore.GetItemAsync<string>("SpotifyToken");
         }
     }
 }

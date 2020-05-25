@@ -124,10 +124,9 @@
     private string LoadingText { get; set; }
     private bool CreateDisabled => !(TotalTracks > 0 && ToAdd > 0 && !string.IsNullOrEmpty(PlaylistName));
     private List<string> ResultMessages { get; set; } = new List<string>();
-    private SpotifyPlaylist Playlist {get;set;}
-    private static Func<Task> PlayAction;
-    private static Func<Task> UnsupportedAction;
-    private bool DisablePlay {get;set;}
+    private SpotifyPlaylist Playlist { get; set; }
+    
+    private bool DisablePlay { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -140,8 +139,7 @@
         LastFm.RequestRefresh += UpdateUI;
         Spotify.RequestRefresh += UpdateUI;
         Spotify.CreationDone += UpdateUI;
-        PlayAction = PlayUri;
-        UnsupportedAction = UnsupportedPlayer;
+        
     }
 
     private async Task LoadLfmPlaylist()
@@ -208,42 +206,17 @@
         }
     }
 
-    private async Task PlayUri()
-    {
-        await Spotify.Play(Playlist.Uri);
-    }
 
     private async Task ConnectAndPlay()
     {
         var token = await LocalStore.GetItemAsync<string>("SpotifyToken");
-        if(Playlist == null || !string.IsNullOrEmpty(token))
+        if (Playlist == null || !string.IsNullOrEmpty(token))
         {
-            await JSRuntime.InvokeVoidAsync("connectPlayer", token);
             Navigation.NavigateTo("/player");
         }
         else
         {
             Toast.ShowError("Invalid token or playlist. Cannot open Spotify");
         }
-    }
-
-    private async Task UnsupportedPlayer()
-    {
-        Toast.ShowError("Unsupported browser. Cannot play on Spotify.");
-        DisablePlay = true;
-        StateHasChanged();
-        await Task.Delay(1);
-    }
-
-    [JSInvokable]
-    public static async Task Play()
-    {
-        await PlayAction.Invoke();
-    }
-
-    [JSInvokable]
-    public static async Task Unsupported()
-    {
-        await UnsupportedAction.Invoke();
     }
 }
