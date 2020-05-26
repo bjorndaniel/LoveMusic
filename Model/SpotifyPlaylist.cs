@@ -1,13 +1,13 @@
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace LoveMusic
 {
     public class CreateSpotifyPlaylist
     {
-        [JsonProperty("name ")]
+        [JsonPropertyName("name ")]
         public string Name { get; set; }
 
-        [JsonProperty("public")]
+        [JsonPropertyName("public")]
         public bool Public { get; set; }
 
     }
@@ -15,13 +15,13 @@ namespace LoveMusic
 
 public class SpotifyPlaylist
 {
-    [JsonProperty("id")]
+    [JsonPropertyName("id")]
     public string Id { get; set; }
 
-    [JsonProperty("name")]
+    [JsonPropertyName("name")]
     public string Name { get; set; }
 
-    [JsonProperty("uri")]
+    [JsonPropertyName("uri")]
     public string Uri { get; set; }
 }
 
@@ -30,14 +30,14 @@ public class SpotifyPlayUri
     public string context_uri { get; set; }
 }
 
-public class SpotifyPlaylistImage
+public class SpotifyImage
 {
-    [JsonProperty("height")]
+    [JsonPropertyName("height")]
     public int Height { get; set; }
 
-    [JsonProperty("width")]
+    [JsonPropertyName("width")]
     public int Width { get; set; }
 
-    [JsonProperty("url")]
+    [JsonPropertyName("url")]
     public string Url { get; set; }
 }

@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
 
 namespace LoveMusic
 {
@@ -74,9 +74,9 @@ namespace LoveMusic
             return type
             switch
             {
-                PlaylistType.TopTracks => JsonConvert.DeserializeObject<LastFmTopTracksResult>(result).LastFmTracksList,
-                    PlaylistType.RecentTracks => JsonConvert.DeserializeObject<LastFmRecentTracksResult>(result).LastFmTracksList,
-                    _ => JsonConvert.DeserializeObject<LastFmLovedTracksResult>(result).LastFmTracksList,
+                PlaylistType.TopTracks => JsonSerializer.Deserialize<LastFmTopTracksResult>(result).LastFmTracksList,
+                    PlaylistType.RecentTracks => JsonSerializer.Deserialize<LastFmRecentTracksResult>(result).LastFmTracksList,
+                    _ => JsonSerializer.Deserialize<LastFmLovedTracksResult>(result).LastFmTracksList,
             };
         }
     }

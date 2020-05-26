@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace LoveMusic
 {
@@ -12,51 +12,51 @@ namespace LoveMusic
 
     public class LastFmLovedTracksResult : LastFmTracksResult
     {
-        [JsonProperty("lovedtracks")]
+        [JsonPropertyName("lovedtracks")]
         public new LastFmTracksList LastFmTracksList { get; set; }
     }
 
     public class LastFmTopTracksResult : LastFmTracksResult
     {
-        [JsonProperty("toptracks")]
+        [JsonPropertyName("toptracks")]
         public new LastFmTracksList LastFmTracksList { get; set; }
     }
     public class LastFmRecentTracksResult : LastFmTracksResult
     {
-        [JsonProperty("recenttracks")]
+        [JsonPropertyName("recenttracks")]
         public new LastFmTracksList LastFmTracksList { get; set; }
     }
 
     public class LastFmTracksList
     {
-        [JsonProperty("@attr")]
+        [JsonPropertyName("@attr")]
         public LastFmAttributes Attributes { get; set; }
 
-        [JsonProperty("track")]
+        [JsonPropertyName("track")]
         public List<LastFmTrack> Tracks { get; set; }
     }
 
     public class LastFmAttributes
     {
-        [JsonProperty("page")]
+        [JsonPropertyName("page")]
         public long Page { get; set; }
 
-        [JsonProperty("total")]
+        [JsonPropertyName("total")]
         public long TotalTracks { get; set; }
 
-        [JsonProperty("totalPages")]
+        [JsonPropertyName("totalPages")]
         public long TotalPages { get; set; }
     }
 
     public class LastFmTrack
     {
-        [JsonProperty("artist")]
+        [JsonPropertyName("artist")]
         public LastFmArtist Artist { get; set; }
 
-        [JsonProperty("image")]
+        [JsonPropertyName("image")]
         public LastFmImage[] Image { get; set; }
 
-        [JsonProperty("name")]
+        [JsonPropertyName("name")]
         public string Name { get; set; }
 
         [JsonIgnore]
@@ -65,14 +65,14 @@ namespace LoveMusic
 
     public class LastFmArtist
     {
-        [JsonProperty("name")]
+        [JsonPropertyName("name")]
         public string Name { get; set; }
 
     }
 
     public partial class LastFmImage
     {
-        [JsonProperty("#text")]
+        [JsonPropertyName("#text")]
         public Uri Text { get; set; }
     }
 }

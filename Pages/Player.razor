@@ -9,7 +9,7 @@
 <main role="main" class="container">
     <div class="row">
         <div class="col">
-            <h2>Playlist @Playlist?.Name</h2>
+            <h2>@PlayerHeader</h2>
         </div>
     </div>
     <br />
@@ -26,7 +26,8 @@
     <br />
     <div class="row ">
         <div class="col">
-            <h4 >@NowPlaying</h4>  
+            <h4 >@Track</h4>  
+            <h6>@Artist</h6>
         </div>
     </div>
     <br />
@@ -43,14 +44,16 @@
 
 @code {
     private SpotifyPlaylist Playlist { get; set; }
-    private string ImageUrl { get; set; }
-    private string NowPlaying { get; set; } = "";
+    private string ImageUrl { get; set; } = "/img/icon180.png";
+    private string Track { get; set; } = "Nothing playing";
+    private string Artist { get; set; }
     private bool IsPlaying { get; set; }
     private string PlayIcon => IsPlaying ? "oi-media-pause" : "oi-media-play";
-    private string NowPlayingClass {get;set;} = "hide";
+    private string NowPlayingClass { get; set; } = "hide";
     private static Func<Task> Update;
     private static Func<Task> PlayAction;
     private static Func<Task> UnsupportedAction;
+    private string PlayerHeader { get; set; }
     protected override async Task OnInitializedAsync()
     {
         var token = await LocalStore.GetItemAsync<string>("SpotifyToken");
@@ -59,6 +62,7 @@
             Playlist = await LocalStore.GetItemAsync<SpotifyPlaylist>("SpotifyPlaylist");
             if (Playlist != null && !string.IsNullOrEmpty(Playlist.Id))
             {
+                PlayerHeader = $"Playing list: {Playlist.Name}";
                 var images = await Spotify.GetImages(Playlist.Id);
                 if (images?.Any() ?? false)
                 {
@@ -79,30 +83,55 @@
 
     private async Task Back()
     {
-        Spotify.UpdatePlayer(SpotifyPlayerTask.previous);
+        await Spotify.UpdatePlayer(SpotifyPlayerTask.previous);
     }
 
     private async Task TogglePlay()
     {
-        Spotify.UpdatePlayer(IsPlaying ? SpotifyPlayerTask.pause : SpotifyPlayerTask.play);
+        await Spotify.UpdatePlayer(IsPlaying ? SpotifyPlayerTask.pause : SpotifyPlayerTask.play);
     }
 
     private async Task Forward()
     {
-        Spotify.UpdatePlayer(SpotifyPlayerTask.next);
+        await Spotify.UpdatePlayer(SpotifyPlayerTask.next);
     }
 
     private async Task PlayUri()
     {
-        await Spotify.Play(Playlist.Uri);
+        if (Playlist != null)
+        {
+            await Spotify.Play(Playlist.Uri);
+        }
+        else
+        {
+            Toast.ShowWarning("No playlist selected.");
+        }
     }
 
     private async Task UpdatePlayer()
     {
-        var context = await LocalStore.GetItemAsync<SpotifyContext>("SpotifyContext");
-        var artist = context.track_window?.current_track?.artists?.FirstOrDefault()?.name;
-        NowPlaying = $"{context?.track_window?.current_track?.name} - {artist}";
-        IsPlaying = !context.paused;
+        var context = await LocalStore.GetItemAsync<SpotifyContext>(Constants.SpotifyContextKey);
+        if (context == null)
+        {
+            Track = "Nothing playing";
+            Artist = string.Empty;
+            IsPlaying = false;
+        }
+        else
+        {
+            if (Playlist == null || !context.IsPlayingList(Playlist.Id))
+            {
+                Playlist = null;
+                ImageUrl = Constants.DefaultImage;
+                PlayerHeader = string.Empty;
+                await LocalStore.RemoveItemAsync("SpotifyPlaylist");
+            }
+            ImageUrl = context.HasImage ? context.Image : Constants.DefaultImage;
+            Artist = context.Artist;
+            Track = context.Track;
+            IsPlaying = !context.Paused ?? false;
+        }
+
         StateHasChanged();
         await Task.Delay(1);
     }
