@@ -1,10 +1,11 @@
-using Newtonsoft.Json;
+
+using System.Text.Json.Serialization;
 
 namespace LoveMusic
 {
     public class SpotifyUser
     {
-        [JsonProperty("id")]
+        [JsonPropertyName("id")]
         public string Id { get; set; }
     }
 

@@ -1,31 +1,32 @@
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace LoveMusic
 {
     public class SpotifyTrackSearchResult
     {
-        [JsonProperty("tracks")]
+        [JsonPropertyName("tracks")]
         public SpotifyTracks SpotifyTracks { get; set; }
     }
 
     public class SpotifyTracks
     {
-        [JsonProperty("items")]
+        [JsonPropertyName("items")]
         public IEnumerable<SpotifyTrack> Tracks { get; set; }
 
-        [JsonProperty("total")]
+        [JsonPropertyName("total")]
         public long Total { get; set; }
     }
     public class SpotifyTrack
     {
-        [JsonProperty("artists")]
+        [JsonPropertyName("artists")]
         public IEnumerable<SpotifyArtist> Artists { get; set; }
 
-        [JsonProperty("name")]
+        [JsonPropertyName("name")]
         public string Name { get; set; }
 
-        [JsonProperty("uri")]
+        [JsonPropertyName("uri")]
         public string Uri { get; set; }
 
         [JsonIgnore]
@@ -33,36 +34,71 @@ namespace LoveMusic
     }
     public class SpotifyArtist
     {
-        [JsonProperty("id")]
+        [JsonPropertyName("id")]
         public string Id { get; set; }
 
-        [JsonProperty("name")]
+        [JsonPropertyName("name")]
         public string Name { get; set; }
     }
 
     public class SpotifyContext
     {
-        public long duration { get; set; }
-        public long position { get; set; }
-        public bool paused { get; set; }
+        [JsonPropertyName("context")]
+        public PlayerContext Context { get; set; }
 
-        public TrackContext track_window { get; set; }
+        [JsonPropertyName("duration")]
+        public double Duration { get; set; }
+
+        [JsonPropertyName("position")]
+        public double Position { get; set; }
+
+        [JsonPropertyName("paused")]
+        public bool? Paused { get; set; }
+
+        [JsonPropertyName("track_window")]
+        public TrackContext TrackWindow { get; set; }
+        public string Track => TrackWindow?.CurrentTrack?.Name;
+        public string Artist => TrackWindow?.CurrentTrack?.Artist;
+        public bool HasUri => !string.IsNullOrEmpty(Context?.Uri);
+        public bool HasImage => TrackWindow?.CurrentTrack?.album?.images?.OrderByDescending(_ => _.Height).FirstOrDefault()?.Url != null;
+        public string Image => TrackWindow?.CurrentTrack?.album?.images?.OrderByDescending(_ => _.Height).FirstOrDefault()?.Url;
+        public bool IsPlayingList(string id)
+        {
+            if (!string.IsNullOrEmpty(Context?.Uri) && Context.Uri.Contains(id))
+            {
+                return true;
+            }
+            return false;
+        }
+        public SpotifyPlaylist FindPlaylist(List<SpotifyPlaylist> lists) =>
+            lists.FirstOrDefault(_ => Context.Uri?.ToLower().Contains(_?.Id?.ToLower()) ?? false);
+    }
+
+    public class PlayerContext
+    {
+        [JsonPropertyName("uri")]
+        public string Uri { get; set; }
     }
 
     public class TrackContext
     {
-        public Track current_track { get; set; }
+        [JsonPropertyName("current_track")]
+        public Track CurrentTrack { get; set; }
     }
 
     public class Album
     {
         public string name { get; set; }
+        public List<SpotifyImage> images { get; set; } = new List<SpotifyImage>();
     }
     public class Track
     {
         public Album album { get; set; }
         public List<Artist> artists { get; set; } = new List<Artist>();
-        public string name { get; set; }
+        [JsonPropertyName("name")]
+        public string Name { get; set; }
+        public string Artist => artists?.FirstOrDefault()?.name;
+
     }
 
     public class Artist

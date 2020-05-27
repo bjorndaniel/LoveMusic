@@ -204,3 +204,11 @@ body {
   right: 0.75rem;
   top: 0.5rem;
 }
+
+.text-muted-app {
+  color: #a0a0a0;
+}
+
+.blazored-typeahead__input-icon:hover .blazored-typeahead__down-arrow path {
+  fill: #333333;
+}

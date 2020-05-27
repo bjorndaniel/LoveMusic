@@ -15,8 +15,10 @@
 @code{
     public async Task Remove()
     {
-        LocalStore.RemoveItemAsync("SpotifyUser");
-        LocalStore.RemoveItemAsync("SpotifyToken");
+        await LocalStore.RemoveItemAsync(Constants.SpotifyUserKey);
+        await LocalStore.RemoveItemAsync(Constants.SpotifyTokenKey);
+        await LocalStore.RemoveItemAsync(Constants.SpotifyContextKey);
+        await LocalStore.RemoveItemAsync(Constants.SpotifyPlayerIdKey);
         Toast.ShowSuccess("Successfulley removed Spotify connection");
         Navigation.NavigateTo($"/");
     }
