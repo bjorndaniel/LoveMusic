@@ -70,6 +70,8 @@ namespace LoveMusic
             }
             return false;
         }
+        public SpotifyPlaylist FindPlaylist(List<SpotifyPlaylist> lists) =>
+            lists.FirstOrDefault(_ => Context.Uri?.ToLower().Contains(_?.Id?.ToLower()) ?? false);
     }
 
     public class PlayerContext

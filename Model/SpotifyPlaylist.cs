@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace LoveMusic
@@ -40,4 +41,12 @@ public class SpotifyImage
 
     [JsonPropertyName("url")]
     public string Url { get; set; }
+}
+
+public class SpotifyPlaylistResult
+{
+    [JsonPropertyName("items")]
+    public List<SpotifyPlaylist> Playlists { get; set; } = new List<SpotifyPlaylist>();
+    [JsonPropertyName("total")]
+    public int Total { get; set; }
 }

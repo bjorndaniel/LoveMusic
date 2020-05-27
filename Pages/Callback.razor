@@ -15,7 +15,7 @@
         if (QueryHelpers.ParseQuery(query).TryGetValue("access_token", out var token))
         {
             Token = token;
-            await LocalStore.SetItemAsync("SpotifyToken", token.FirstOrDefault());
+            await LocalStore.SetItemAsync(Constants.SpotifyTokenKey, token.FirstOrDefault());
             await GetUser();
             Navigation.NavigateTo("/creator");
         }
