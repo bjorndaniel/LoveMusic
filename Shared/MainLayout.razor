@@ -1,4 +1,9 @@
+@inject NavigationManager Navigation
+@inject IToastService Toast
 @inherits LayoutComponentBase
+@inject Blazored.LocalStorage.ILocalStorageService LocalStore
+@inject SpotifyService Spotify
+
 <div class="cover-container d-flex h-100 p-3 mx-auto flex-column">
     <header class="masthead mb-auto">
         <div class="inner">
@@ -19,16 +24,17 @@
                             Creator
                         </NavLink>
                     </li>
+                    <li class="nav-item" data-toggle="collapse" data-target=".navbar-collapse.show">
+                        <NavLink class="nav-link" href="player">
+                            Player
+                        </NavLink>
+                    </li>
                      <li class="nav-item" data-toggle="collapse" data-target=".navbar-collapse.show">
                         <NavLink class="nav-link" href="disconnect">
                             Disconnect
                         </NavLink>
                     </li>
-                     <li class="nav-item" data-toggle="collapse" data-target=".navbar-collapse.show">
-                        <NavLink class="nav-link" href="player">
-                            Player
-                        </NavLink>
-                    </li>
+                   
                 </ul>
                 </div>
                 
@@ -39,9 +45,30 @@
     @Body
     <footer class="mastfoot mt-auto">
         <div class="inner">
-            <p><a href="https://github.com/bjorndaniel/lovemusic" target="_blank">Checkout the code on github</a></p>
+            <p><a href="https://github.com/bjorndaniel/lovemusic" target="_blank">Checkout the code on github</a>
+            </p>
         </div>
     </footer>
     <BlazoredToasts 
     />
 </div>
+@code{
+    private static Action Failed;
+    protected override async Task OnInitializedAsync()
+    {
+        Failed = SpotifyConnectionFailed;
+    }
+
+    private void SpotifyConnectionFailed()
+    {
+        Toast.ShowError("Invalid token. Please reconnect to Spotify");
+        Navigation.NavigateTo("/");
+    }
+
+    [JSInvokable]
+    public static async Task<bool> ConnectionError()
+    {
+        Failed.Invoke();
+        return await Task.FromResult(true);
+    }
+}

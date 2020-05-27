@@ -1,25 +1,47 @@
 @page "/player"
 @inject Blazored.LocalStorage.ILocalStorageService LocalStore
-@inject HttpClient Http
 @inject SpotifyService Spotify
 @inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@inject IToastService Toast
+
 
 <main role="main" class="container">
-    <div class="row">
-        <div class="col">
-            <h2>Playlist @Playlist?.Name</h2>
+    <div class="row justify-content-center">
+        <div class="col-sm-12 col-md-8 col-lg-6">
+            <BlazoredTypeahead SearchMethod="SearchPlaylists"
+                    Placeholder="Search for a playlist"
+                    TValue="SpotifyPlaylist"
+                    TItem="SpotifyPlaylist"
+                    Value="Playlist"
+                    ValueChanged="@((SpotifyPlaylist p) =>  PlaylistChanged(p))"
+                    ValueExpression="@(() => Playlist)"
+                   >
+                <SelectedTemplate>
+                @context.Name
+                </SelectedTemplate>
+                <ResultTemplate>
+                @context.Name
+                </ResultTemplate>
+            </BlazoredTypeahead>
         </div>
     </div>
     <br />
     <div class="row">
         <div class="col">
-            <img src="@ImageUrl"  class="cover-art"/>
+            <img src="@ImageUrl" class="cover-art"/>
+        </div>
+    </div>
+    <div class="row @NowPlayingClass">
+        <div class="col">
+            <h2>Playing list: @Playlist?.Name</h2>
         </div>
     </div>
     <br />
     <div class="row ">
         <div class="col">
-            <h4>@NowPlaying</h4>  
+            <h4 >@Track</h4>  
+            <h6>@Artist</h6>
         </div>
     </div>
     <br />
@@ -32,56 +54,149 @@
             </div>
         </div>
     </div>
+    <div class="row">
+        <div class="col">
+            <small class="form-text text-muted-app">Please be aware that the Spotify connection is only valid for one hour before you need to click Connect with Spotify again.</small>
+            <small class="form-text text-muted-app">This will be changed in a coming release.</small>
+        </div>
+    </div>
 </main>
 
 @code {
-
-    private SpotifyPlaylist Playlist {get;set;}
-    private string ImageUrl {get;set;}
-    private string NowPlaying {get;set;} = "";
-    private bool IsPlaying {get;set;}
+    private SpotifyPlaylist Playlist { get; set; }
+    private string ImageUrl { get; set; } = "/img/icon180.png";
+    private string Track { get; set; } = "Nothing playing";
+    private string Artist { get; set; }
+    private bool IsPlaying { get; set; }
     private string PlayIcon => IsPlaying ? "oi-media-pause" : "oi-media-play";
+    private string NowPlayingClass => Playlist == null ? "hide" : "";
     private static Func<Task> Update;
+    private static Func<Task> PlayAction;
+    private static Func<Task> UnsupportedAction;
+    private string PlayerHeader { get; set; }
+    private List<SpotifyPlaylist> Playlists { get; set; } = new List<SpotifyPlaylist>();
 
     protected override async Task OnInitializedAsync()
     {
-        Playlist = await LocalStore.GetItemAsync<SpotifyPlaylist>("SpotifyPlaylist");
-        if(Playlist != null)
+
+        var token = await LocalStore.GetItemAsync<string>("SpotifyToken");
+        if (token != null)
         {
-            var images = await Spotify.GetImages(Playlist.Id);
-            if(images?.Any() ?? false)
+            Playlist = await LocalStore.GetItemAsync<SpotifyPlaylist>("SpotifyPlaylist");
+            if (Playlist != null && !string.IsNullOrEmpty(Playlist.Id))
             {
-                ImageUrl = images.OrderByDescending(_ => _.Height).FirstOrDefault()?.Url;
+                PlayerHeader = $"Playing list: {Playlist.Name}";
+                var images = await Spotify.GetImages(Playlist.Id);
+                if (images?.Any() ?? false)
+                {
+                    ImageUrl = images.OrderByDescending(_ => _.Height).FirstOrDefault()?.Url;
+                }
             }
+            if (!await Spotify.GetUsersPlaylists())
+            {
+                Toast.ShowError("Spotify token missing or expired. Please click Connect with Spotify");
+                Navigation.NavigateTo("/");
+            }
+            Playlists = await LocalStore.GetItemAsync<List<SpotifyPlaylist>>(Constants.SpotifyPlaylistsKey);
+            Update = UpdatePlayer;
+            PlayAction = PlayUri;
+            UnsupportedAction = UnsupportedPlayer;
+            await JSRuntime.InvokeVoidAsync("connectPlayer", token);
         }
-        Update = UpdatePlayer;
-        
+        else
+        {
+            Toast.ShowError("Invalid token. Please reconnect to Spotify");
+            Navigation.NavigateTo("/");
+        }
     }
 
     private async Task Back()
     {
-        Spotify.UpdatePlayer(SpotifyPlayerTask.previous);
+        await Spotify.UpdatePlayer(SpotifyPlayerTask.previous);
     }
 
     private async Task TogglePlay()
     {
-        Spotify.UpdatePlayer(IsPlaying ? SpotifyPlayerTask.pause : SpotifyPlayerTask.play);
-        IsPlaying = !IsPlaying;
+        await Spotify.UpdatePlayer(IsPlaying ? SpotifyPlayerTask.pause : SpotifyPlayerTask.play);
     }
 
     private async Task Forward()
     {
-        Spotify.UpdatePlayer(SpotifyPlayerTask.next);
+        await Spotify.UpdatePlayer(SpotifyPlayerTask.next);
+    }
+
+    private async Task PlayUri()
+    {
+        if (Playlist != null)
+        {
+            await Spotify.Play(Playlist.Uri);
+        }
+        else
+        {
+            Toast.ShowWarning("No playlist selected.");
+        }
     }
 
     private async Task UpdatePlayer()
     {
-        var context = await LocalStore.GetItemAsync<SpotifyContext>("SpotifyContext");
-        var artist = context.track_window?.current_track?.artists?.FirstOrDefault()?.name;
-        NowPlaying = $"{context?.track_window?.current_track?.name} - {artist}";
-        IsPlaying = !context.paused;
+        var context = await LocalStore.GetItemAsync<SpotifyContext>(Constants.SpotifyContextKey);
+        if (context == null)
+        {
+            Track = "Nothing playing";
+            Artist = string.Empty;
+            IsPlaying = false;
+        }
+        else
+        {
+
+            if (Playlist == null)
+            {
+                Playlist = context.FindPlaylist(Playlists);
+            }
+            if (Playlist == null)
+            {
+                ImageUrl = Constants.DefaultImage;
+                PlayerHeader = string.Empty;
+                await LocalStore.RemoveItemAsync("SpotifyPlaylist");
+            }
+            else
+            {
+                ImageUrl = context.HasImage ? context.Image : Constants.DefaultImage;
+                Artist = context.Artist;
+                Track = context.Track;
+                IsPlaying = !context.Paused ?? false;
+            }
+
+        }
+
         StateHasChanged();
         await Task.Delay(1);
+    }
+
+    private async Task UnsupportedPlayer()
+    {
+        Toast.ShowError("Unsupported browser. Cannot play on Spotify.");
+        StateHasChanged();
+        await Task.Delay(1);
+    }
+
+    private async Task<IEnumerable<SpotifyPlaylist>> SearchPlaylists(string searchText) =>
+        await Task.FromResult(Playlists.Where(_ => _.Name.ToLower().Contains(searchText.ToLower())));
+
+    private async Task PlaylistChanged(SpotifyPlaylist list)
+    {
+        Playlist = list;
+        if (Playlist != null)
+        {
+            await PlayUri();
+        }
+
+    }
+
+    [JSInvokable]
+    public static async Task Unsupported()
+    {
+        await UnsupportedAction.Invoke();
     }
 
     [JSInvokable]
