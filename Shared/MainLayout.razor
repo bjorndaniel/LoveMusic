@@ -54,7 +54,7 @@
 </div>
 @code{
     private static Action Failed;
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         Failed = SpotifyConnectionFailed;
     }

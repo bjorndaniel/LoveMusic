@@ -5,7 +5,7 @@ namespace LoveMusic
 {
     public class CreateSpotifyPlaylist
     {
-        [JsonPropertyName("name ")]
+        [JsonPropertyName("name")]
         public string Name { get; set; }
 
         [JsonPropertyName("public")]

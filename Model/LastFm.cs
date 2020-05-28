@@ -36,16 +36,23 @@ namespace LoveMusic
         public List<LastFmTrack> Tracks { get; set; }
     }
 
+    ///Seems like System.Text.Json can't handle int64 correctly as of now
     public class LastFmAttributes
     {
         [JsonPropertyName("page")]
-        public long Page { get; set; }
+        public string PageString { get; set; }
+
+        public int Page => int.TryParse(PageString, out var t) ? t : 0;
 
         [JsonPropertyName("total")]
-        public long TotalTracks { get; set; }
+        public string Total { get; set; }
+
+        public int TotalTracks => int.TryParse(Total, out var t) ? t : 0;
 
         [JsonPropertyName("totalPages")]
-        public long TotalPages { get; set; }
+        public string TotalPagesString { get; set; }
+
+        public int TotalPages => int.TryParse(TotalPagesString, out var t) ? t : 0;
     }
 
     public class LastFmTrack
