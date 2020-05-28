@@ -139,7 +139,7 @@
         LastFm.RequestRefresh += UpdateUI;
         Spotify.RequestRefresh += UpdateUI;
         Spotify.CreationDone += UpdateUI;
-        if(!await Spotify.GetUsersPlaylists())
+        if (!await Spotify.GetUsersPlaylists())
         {
             Toast.ShowError("Spotify token missing or expired. Please click Connect with Spotify");
             Navigation.NavigateTo("/");
@@ -215,7 +215,7 @@
         var token = await LocalStore.GetItemAsync<string>("SpotifyToken");
         if (Playlist == null || !string.IsNullOrEmpty(token))
         {
-            Navigation.NavigateTo("/player");
+            Navigation.NavigateTo("/player/true");
         }
         else
         {

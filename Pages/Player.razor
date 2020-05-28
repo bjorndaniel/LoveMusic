@@ -1,4 +1,4 @@
-@page "/player"
+@page "/player/{Play:bool}"
 @inject Blazored.LocalStorage.ILocalStorageService LocalStore
 @inject SpotifyService Spotify
 @inject IJSRuntime JSRuntime
@@ -75,10 +75,10 @@
     private static Func<Task> UnsupportedAction;
     private string PlayerHeader { get; set; }
     private List<SpotifyPlaylist> Playlists { get; set; } = new List<SpotifyPlaylist>();
-
+    [Parameter]
+    public bool? Play { get; set; }
     protected override async Task OnInitializedAsync()
     {
-
         var token = await LocalStore.GetItemAsync<string>("SpotifyToken");
         if (token != null)
         {
@@ -90,6 +90,10 @@
                 if (images?.Any() ?? false)
                 {
                     ImageUrl = images.OrderByDescending(_ => _.Height).FirstOrDefault()?.Url;
+                }
+                if (Play??false)
+                {
+                    await PlayUri();
                 }
             }
             if (!await Spotify.GetUsersPlaylists())
