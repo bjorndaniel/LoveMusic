@@ -5,6 +5,12 @@ using System.Text.Json.Serialization;
 namespace LoveMusic
 {
 
+    public class LastFmCount
+    {
+        [JsonPropertyName("count")]
+        public int Count { get; set; }
+    }
+
     public abstract class LastFmTracksResult
     {
         public LastFmTracksList LastFmTracksList { get; set; }

@@ -9,15 +9,13 @@ namespace LoveMusic
 {
     public class LastFmService
     {
-
         private readonly HttpClient _client;
-        private readonly string _apiKey;
-        private string LastFmUrl => "https://ws.audioscrobbler.com/2.0/?method={0}&user={1}&api_key={2}&format=json&limit={3}&page={4}";
+        private readonly string _apiUrl;
 
         public LastFmService(HttpClient client, IConfiguration config)
         {
             _client = client;
-            _apiKey = config["Api"];
+            _apiUrl = config["FunctionsApi"];
         }
 
         public event Func<object, MessageEventArgs, Task> RequestRefresh;
@@ -28,8 +26,7 @@ namespace LoveMusic
             var perPage = nrToGet < 100 ? nrToGet : 100;
             var pageNr = 1;
             var method = Extensions.GetAttributeNameProperty<PlaylistType, LastFmMethod>(type.ToString());
-            var url = string.Format(LastFmUrl, method, lastFmUser, _apiKey, perPage, pageNr);
-            var result = await _client.GetStringAsync(url);
+            var result = await _client.GetStringAsync($"{_apiUrl}/lastfm/tracks?user={lastFmUser}&method={method}&perpage={perPage}&page={pageNr}");
             var lfmResult = GetTracksResult(type, result);
             var totalTracks = lfmResult.Attributes.TotalTracks;
             nrToGet = (int) totalTracks < nrToGet ? (int) totalTracks : nrToGet;
@@ -41,8 +38,7 @@ namespace LoveMusic
                     perPage = nrToGet - returnValue.Count;
                 }
                 pageNr++;
-                url = string.Format(LastFmUrl, method, lastFmUser, _apiKey, perPage, pageNr);
-                result = await _client.GetStringAsync(url);
+                result = await _client.GetStringAsync($"{_apiUrl}/lastfm/tracks?user={lastFmUser}&method={method}&perpage={perPage}&page={pageNr}");
                 returnValue.AddRange(GetTracksResult(type, result).Tracks);
                 if (returnValue.Count % 50 == 0)
                 {
@@ -60,11 +56,11 @@ namespace LoveMusic
         public async Task<long> GetTrackCount(PlaylistType type, string lastFmUser)
         {
             var method = Extensions.GetAttributeNameProperty<PlaylistType, LastFmMethod>(type.ToString());
-            var url = string.Format(LastFmUrl, method, lastFmUser, _apiKey, 1, 1);
-            var result = await _client.GetAsync(url);
+            var result = await _client.GetAsync($"{_apiUrl}/lastfm/count?user={lastFmUser}&method={method}");
             if (result.IsSuccessStatusCode)
             {
-                return GetTracksResult(type, await result.Content.ReadAsStringAsync()).Attributes.TotalTracks;
+                var model = JsonSerializer.Deserialize<LastFmCount>(await result.Content.ReadAsStringAsync());
+                return model.Count;
             }
             return 0;
         }
