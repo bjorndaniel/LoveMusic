@@ -29,7 +29,7 @@ jobs:
         env:
           SPOTIFY_REDIRECT_URL: ${{ secrets.SPOTIFY_REDIRECT_URL }}
           SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
-          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+          FUNCTIONS_API_URL: ${{ secrets.FUNCTIONS_API_URL }}:  
 
       - name: Build Blazor App
         run: dotnet publish -c Release -o published
