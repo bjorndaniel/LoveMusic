@@ -18,6 +18,6 @@ To run this app you need developer accounts for Spotify and last.fm.
 
   * Add selection view where the user can select which tracks to add
   * Add more playlist-types
-  * See if it is possible to integrate setlist.fm
+  * <s>See if it is possible to integrate setlist.fm</s> DONE
   
 
