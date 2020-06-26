@@ -78,6 +78,7 @@
     private List<SpotifyPlaylist> Playlists { get; set; } = new List<SpotifyPlaylist>();
     [Parameter]
     public bool? Play { get; set; }
+    
     protected override async Task OnInitializedAsync()
     {
         var token = await LocalStore.GetItemAsync<string>("SpotifyToken");

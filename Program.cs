@@ -18,6 +18,7 @@ namespace LoveMusic
             builder.Services.AddTransient(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
             builder.Services.AddScoped<SpotifyService>();
             builder.Services.AddScoped<LastFmService>();
+            builder.Services.AddScoped<SetlistFmService>();
             builder.Services.AddBlazoredToast();
             await builder.Build().RunAsync();
         }

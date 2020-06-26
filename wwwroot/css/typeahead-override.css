@@ -9,6 +9,8 @@
     width: 100%;
     background: #fff;
     color: #111 !important;
+    text-shadow: 0 0.05rem 0.1rem rgba(0, 0, 0, 0.5);
+    box-shadow: inset 0 0 5rem rgba(0, 0, 0, 0.5);
 }
 
 .blazored-typeahead__active-item,
@@ -20,4 +22,6 @@
     background-image: linear-gradient(#111, #555);
     color: #fff;
     cursor: pointer;
+    text-shadow: 0 0.05rem 0.1rem rgba(0, 0, 0, 0.5);
+    box-shadow: inset 0 0 5rem rgba(0, 0, 0, 0.5);
 }

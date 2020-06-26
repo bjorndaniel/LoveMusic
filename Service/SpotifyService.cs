@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -71,7 +72,7 @@ namespace LoveMusic
                     RequestRefresh?.Invoke(this, new MessageEventArgs
                     {
                         Messages = new List<string> { $"Added {processed} of {tracks.Count}. {notFound} not found." },
-                            Type = UIUpdateType.Processing
+                        Type = UIUpdateType.Processing
                     });
                 }
             }
@@ -83,12 +84,75 @@ namespace LoveMusic
             CreationDone?.Invoke(this, new MessageEventArgs
             {
                 Type = UIUpdateType.Done,
-                    Messages = new List<string>
+                Messages = new List<string>
                     {
                         $"Your playlist {name} was created.",
                         $"{tracks.Count - notFound} added.",
                         $"{notFound} tracks could not be found on Spotify.",
                     }
+            });
+            return created;
+        }
+
+        public async Task<SpotifyPlaylist> CreatePlaylistSFM(string name, Setlist setlist)
+        {
+            var notFound = 0;
+            var processed = 0;
+            var toPost = new List<SpotifyTrack>();
+            _addedTracks = new List<SpotifyTrack>();
+            var token = await _localStore.GetItemAsync<string>(Constants.SpotifyTokenKey);
+            var user = await _localStore.GetItemAsync<SpotifyUser>(Constants.SpotifyUserKey);
+            _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var playlist = new CreateSpotifyPlaylist
+            {
+                Name = name
+            };
+            var result = await _client.PostAsJsonAsync($"{_baseUrl}/users/{user.Id}/playlists", playlist);
+            if (!result.IsSuccessStatusCode)
+            {
+                RequestRefresh?.Invoke(this, new MessageEventArgs { Messages = new List<string> { "Could not create playlist." } });
+                return null;
+            }
+            var created = JsonSerializer.Deserialize<SpotifyPlaylist>(await result.Content.ReadAsStringAsync());
+            foreach (var song in setlist.Songs)
+            {
+                var track = await SearchTrack(setlist.Artist.Name, song.Name);
+                if (track.NotFound)
+                {
+                    notFound++;
+                }
+                else
+                {
+                    toPost.Add(track);
+                    _addedTracks.Add(track);
+                }
+                processed++;
+                if (toPost.Count == 10)
+                {
+                    var query = string.Join(',', toPost.Select(_ => _.Uri?.ToString()));
+                    await _client.PostAsync($"{_baseUrl}/playlists/{created.Id}/tracks?uris={query}", new StringContent(""));
+                    toPost.Clear();
+                    RequestRefresh?.Invoke(this, new MessageEventArgs
+                    {
+                        Messages = new List<string> { $"Added {processed} of {setlist.Songs.Count}. {notFound} not found." },
+                        Type = UIUpdateType.Processing
+                    });
+                }
+            }
+            if (toPost.Any())
+            {
+                var query = string.Join(',', toPost.Select(_ => _.Uri?.ToString()));
+                await _client.PostAsync($"{_baseUrl}/playlists/{created.Id}/tracks?uris={query}", new StringContent(""));
+            }
+            CreationDone?.Invoke(this, new MessageEventArgs
+            {
+                Type = UIUpdateType.Done,
+                Messages = new List<string>
+                     {
+                         $"Your playlist {name} was created.",
+                         $"{setlist.Songs.Count - notFound} added.",
+                         $"{notFound} tracks could not be found on Spotify.",
+                     }
             });
             return created;
         }
@@ -111,8 +175,8 @@ namespace LoveMusic
             return new SpotifyTrack
             {
                 Artists = new List<SpotifyArtist> { new SpotifyArtist { Name = artist } },
-                    Name = $"{track} NOT FOUND!!!!!",
-                    NotFound = true
+                Name = $"{track} NOT FOUND!!!!!",
+                NotFound = true
             };
         }
 

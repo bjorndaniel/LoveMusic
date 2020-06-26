@@ -1,6 +1,5 @@
 @page "/creator"
-@inject HttpClient Http
-@inject NavigationManager Navigation
+@inject NavigationManager Navigation    
 @inject Blazored.LocalStorage.ILocalStorageService LocalStore
 @inject IConfiguration Config
 @inject SpotifyService Spotify
@@ -125,9 +124,7 @@
     private bool CreateDisabled => !(TotalTracks > 0 && ToAdd > 0 && !string.IsNullOrEmpty(PlaylistName));
     private List<string> ResultMessages { get; set; } = new List<string>();
     private SpotifyPlaylist Playlist { get; set; }
-
     private bool DisablePlay { get; set; }
-
     protected override async Task OnInitializedAsync()
     {
         var token = await LocalStore.GetItemAsync<string>("SpotifyToken");
@@ -145,7 +142,6 @@
             Navigation.NavigateTo("/");
         }
     }
-
     private async Task LoadLfmPlaylist()
     {
         ResultMessages.Clear();
@@ -169,7 +165,6 @@
 
         ShowLoading = "hide";
     }
-
     private void GoBack()
     {
         LoadingMessage = "...";
@@ -180,7 +175,6 @@
         PlaylistName = string.Empty;
         ToAdd = null;
     }
-
     private async Task CreateSpotifyPlaylist()
     {
         LoadingText = "Creating playlist";
@@ -192,7 +186,6 @@
         await LocalStore.SetItemAsync("SpotifyPlaylist", Playlist);
         GoBack();
     }
-
     private async Task UpdateUI(object sender, MessageEventArgs args)
     {
         switch (args.Type)
@@ -209,7 +202,6 @@
                 break;
         }
     }
-
     private async Task ConnectAndPlay()
     {
         var token = await LocalStore.GetItemAsync<string>("SpotifyToken");
