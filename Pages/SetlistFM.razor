@@ -7,7 +7,7 @@
 
 <main role="main" class="container">
     <div class="@HeaderCollapse">
-    <h1 class="cover-heading">Bringing setlist.fm to Spotify.</h1>
+        <h1 class="cover-heading">Bringing setlist.fm to Spotify.</h1>
         <p class="lead">Search for shows you have been to (or wish you had) and create a Spotify playlist.</p>
     </div>
     <div class="row justify-content-center">
@@ -25,52 +25,85 @@
             <div class="row justify-content-center">
                 <div class="col-sm-12 col-md-8 col-lg-6">
                     <button disabled="@IsDisabled" @onclick:preventDefault @onclick="Search" class="btn btn-success">Search</button>
+                    <div class="@ShowPlay mt-2">
+                        <button @onclick="ConnectAndPlay" @onclick:preventDefault class="btn btn-primary">Play your list</button>
+                        <small class="form-text text-muted-app">Requires a Spotify premium account.</small>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     <br />
-    <div class="row justify-content-center result-table @(ShowResults)">
-        <div class="col">
-            <table class="table table-bordered table-dark">
-                <thead>
-                    <tr>
-                        <th class="text-left" scope="col">Artist</th>
-                        <th class="text-left" scope="col">Venue</th>
-                        <th class="text-left" scope="col">Date</th>
-                        <th class="text-left" scope="col">Create</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if(Setlists.ContainsKey(CurrentPage))
+    @if (IsSmall)
+    {
+        <div class="row justify-content-center result-table @(ShowResults)">
+            <div class="col">
+                <ul class="list-unstyled">
+                    @if (Setlists.ContainsKey(CurrentPage))
                     {
-                        foreach(var list in Setlists[CurrentPage])
+                        foreach (var list in Setlists[CurrentPage])
                         {
-                            <tr>
-                                <td class="text-left"><a data-toggle="tooltip" data-placement="top" title="See more on setlist.fm" href="@list.Url" target="_blank">@list.Artist.Name</a></td>
-                                <td class="text-left">@list.Venue.Name</td>
-                                <td class="text-left">@list.EventDate</td>
-                                <td class="text-center"><img src="img/icon180.png" style="height:30px;" @onclick:preventDefault @onclick="@(() => {Create(list.Id);})" /></td>
-                            </tr>
+                            <li class="media li-result align-items-center">
+                                <img data-toggle="tooltip" data-placement="top" title="Create playlist" src="img/icon180.png" style="height:45px" class="ml-3 mr-3" @onclick:preventDefault @onclick="@(async () => { await Create(list.Id);})" />
+                                <div class="media-body">
+                                    <h5 class="mt-0 mb-1">@list.Artist.Name</h5>
+                                    @list.Venue.Name
+                                    <br />
+                                    @list.EventDate
+                                    <br />
+                                    <a data-toggle="tooltip" data-placement="top" title="See more on setlist.fm" href="@list.Url" target="_blank">See more on setlist.fm</a>
+                                </div>
+                            </li>
                         }
                     }
-        
-                </tbody>
-            </table>
+                </ul>
+            </div>
         </div>
-    </div>
-    @if(TotalPages > 1)
+    }
+    else
+    {
+        <div class="row justify-content-center result-table @(ShowResults)">
+            <div class="col">
+                <table class="table table-bordered table-dark">
+                    <thead>
+                        <tr>
+                            <th class="text-left" scope="col">Artist</th>
+                            <th class="text-left" scope="col">Venue</th>
+                            <th class="text-left" scope="col">Date</th>
+                            <th class="text-left" scope="col">Create</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Setlists.ContainsKey(CurrentPage))
+                        {
+                            foreach (var list in Setlists[CurrentPage])
+                            {
+                                <tr>
+                                    <td class="text-left"><a data-toggle="tooltip" data-placement="top" title="See more on setlist.fm" href="@list.Url" target="_blank">@list.Artist.Name</a></td>
+                                    <td class="text-left">@list.Venue.Name</td>
+                                    <td class="text-left">@list.EventDate</td>
+                                    <td class="text-center"><img src="img/icon180.png" style="height:30px;" @onclick:preventDefault @onclick="@(async () => {await Create(list.Id);})" /></td>
+                                </tr>
+                            }
+                        }
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    @if (TotalPages > 1)
     {
         <div class="row justify-content-center @(ShowPager)">
             <div class="col">
-               <nav aria-label="Customized pagination">
+                <nav aria-label="Customized pagination">
                     <ul class="pagination">
                         <li class="page-item @(CurrentPage < 2 ? "disabled" : "")">
                             <a class="page-link"
-                                href="#"
-                                @onclick="Previous"
-                                @onclick:preventDefault
-                                aria-label="Previous">
+                               href="#"
+                               @onclick="Previous"
+                               @onclick:preventDefault
+                               aria-label="Previous">
                                 <span aria-hidden="true">&laquo;</span>
                                 <span class="sr-only">Previous</span>
                             </a>
@@ -80,10 +113,10 @@
                         </li>
                         <li class="page-item @(CurrentPage == TotalPages ? "disabled" : "")">
                             <a class="page-link"
-                                href="#"
-                                @onclick="Next"
-                                @onclick:preventDefault
-                                aria-label="Previous">
+                               href="#"
+                               @onclick="Next"
+                               @onclick:preventDefault
+                               aria-label="Previous">
                                 <span aria-hidden="true">&raquo;</span>
                                 <span class="sr-only">Previous</span>
                             </a>
@@ -98,7 +131,7 @@
             <p class="lead">No result found</p>
         </div>
     </div>
-     <div class="row @(ShowLoading)">
+    <div class="row @(ShowLoading)">
         <div class="col text-center ">
             <br />
             <p class="lead">@LoadingText</p>
@@ -127,7 +160,7 @@
         </div>
     </div>
 </main>
-
+<MediaQuery Media="@Breakpoints.XSmallDown" @bind-Matches="IsSmall" />
 @code
 {
     private string HeaderCollapse { get; set; }
@@ -138,12 +171,16 @@
     private string ShowLoading { get; set; } = "hide";
     private string ShowResults { get; set; } = "hide";
     private string ShowNoResult { get; set; } = "hide";
+    private string ShowPlay { get; set; } = "hide";
     private string ShowPager { get; set; }
     private string LoadingMessage { get; set; }
     private string LoadingText { get; set; }
     private Dictionary<int, List<Setlist>> Setlists { get; set; } = new Dictionary<int, List<Setlist>>();
     private int CurrentPage { get; set; }
     private int TotalPages { get; set; }
+    private bool IsSmall = false;
+    private List<string> ResultMessages { get; set; } = new List<string>();
+    private SpotifyPlaylist Playlist { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -153,6 +190,29 @@
             Toast.ShowError("No Spotify token found. Please click Connect with Spotify");
             Navigation.NavigateTo("/");
         }
+        Spotify.RequestRefresh += UpdateUI;
+        Spotify.CreationDone += UpdateUI;
+        if (!await Spotify.GetUsersPlaylists())
+        {
+            Toast.ShowError("Spotify token missing or expired. Please click Connect with Spotify");
+            Navigation.NavigateTo("/");
+        }
+    }
+
+    private async Task UpdateUI(object sender, MessageEventArgs args)
+    {
+        switch (args.Type)
+        {
+            case UIUpdateType.Done:
+                ResultMessages.AddRange(args.Messages);
+                ShowLoading = "hide";
+                break;
+            default:
+                LoadingMessage = args.Messages.FirstOrDefault();
+                StateHasChanged();
+                await Task.Delay(1);
+                break;
+        }
     }
 
     private async Task Search()
@@ -160,6 +220,7 @@
         ShowResults = "hide";
         ShowNoResult = "hide";
         ShowPager = "hide";
+        ShowPlay = "hide";
         ShowLoading = string.Empty;
         Setlists = new Dictionary<int, List<Setlist>>();
         var result = await SetlistFm.Search(ArtistName, CityName, VenueName, 1);
@@ -184,12 +245,32 @@
 
     private async Task Create(string id)
     {
+        var list = Setlists[CurrentPage].FirstOrDefault(_ => _.Id == id);
+        if (list.Songs.Count() == 0)
+        {
+            Toast.ShowWarning("The list contains no songs");
+            return;
+        }
         ShowResults = "hide";
         ShowNoResult = "hide";
         ShowPager = "hide";
         ShowLoading = string.Empty;
-        var list = Setlists[CurrentPage].FirstOrDefault(_ => _.Id == id);
-        Toast.ShowSuccess($"Create {list.Songs.Count()}");
+        Playlist = await Spotify.CreatePlaylistSFM($"{list.Artist.Name} {list.Venue.Name} {list.EventDate}", list);
+        await LocalStore.SetItemAsync("SpotifyPlaylist", Playlist);
+        ShowPlay = string.Empty;
+    }
+
+    private async Task ConnectAndPlay()
+    {
+        var token = await LocalStore.GetItemAsync<string>("SpotifyToken");
+        if (Playlist == null || !string.IsNullOrEmpty(token))
+        {
+            Navigation.NavigateTo("/player/true");
+        }
+        else
+        {
+            Toast.ShowError("Invalid token or playlist. Cannot open Spotify");
+        }
     }
 
     private async Task Previous()
