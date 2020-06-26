@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json.Serialization;
 
 namespace LoveMusic
@@ -11,6 +12,9 @@ namespace LoveMusic
 
         [JsonPropertyName("itemsPerPage")]
         public int PerPage { get; set; }
+
+        [JsonPropertyName("total")]
+        public int Total { get; set; }
 
         [JsonPropertyName("setlist")]
         public List<Setlist> SetLists { get; set; } = new List<Setlist>();
@@ -36,6 +40,10 @@ namespace LoveMusic
 
         [JsonPropertyName("sets")]
         public SetlistSets Sets { get; set; }
+
+        [JsonPropertyName("url")]
+        public string Url { get; set; }
+        public List<SetlistSong> Songs => Sets.Sets.SelectMany(_ => _.Songs).ToList();
     }
 
     public class SetlistSets
