@@ -1,3 +1,4 @@
+![Azure Static Web Apps CI/CD](https://github.com/bjorndaniel/LoveMusic/workflows/Azure%20Static%20Web%20Apps%20CI/CD/badge.svg)
 # Love music - Bringing your last.fm playlists to Spotify
 
 This app allows the user to search for various playlists for a last.fm user and add those tracks (if found) to a new Spotify playlist.
