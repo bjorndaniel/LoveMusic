@@ -39,16 +39,6 @@
             "problemMatcher": "$msCompile"
         },
         {
-            "type": "func",
-            "command": "host start",
-            "problemMatcher": "$func-watch",
-            "isBackground": true,
-            "dependsOn": "npm install",
-            "options": {
-                "cwd": "${workspaceFolder}/api"
-            }
-        },
-        {
             "type": "shell",
             "label": "npm install",
             "command": "npm install",
@@ -59,6 +49,34 @@
         {
             "type": "shell",
             "label": "npm prune",
+            "command": "npm prune --production",
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}/api"
+            }
+        },
+        {
+            "type": "func",
+            "label": "func: host start",
+            "command": "host start",
+            "problemMatcher": "$func-node-watch",
+            "isBackground": true,
+            "dependsOn": "npm install (functions)",
+            "options": {
+                "cwd": "${workspaceFolder}/api"
+            }
+        },
+        {
+            "type": "shell",
+            "label": "npm install (functions)",
+            "command": "npm install",
+            "options": {
+                "cwd": "${workspaceFolder}/api"
+            }
+        },
+        {
+            "type": "shell",
+            "label": "npm prune (functions)",
             "command": "npm prune --production",
             "problemMatcher": [],
             "options": {
