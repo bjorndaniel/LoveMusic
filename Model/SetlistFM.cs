@@ -1,130 +1,120 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json.Serialization;
+namespace LoveMusic;
 
-namespace LoveMusic
+public class SetlistResponse
 {
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = string.Empty;
 
-    public class SetlistResponse
-    {
-        [JsonPropertyName("type")]
-        public string Type { get; set; }
+    [JsonPropertyName("itemsPerPage")]
+    public int PerPage { get; set; }
 
-        [JsonPropertyName("itemsPerPage")]
-        public int PerPage { get; set; }
+    [JsonPropertyName("total")]
+    public int Total { get; set; }
 
-        [JsonPropertyName("total")]
-        public int Total { get; set; }
+    [JsonPropertyName("setlist")]
+    public List<Setlist> SetLists { get; set; } = new List<Setlist>();
+}
 
-        [JsonPropertyName("setlist")]
-        public List<Setlist> SetLists { get; set; } = new List<Setlist>();
+public class Setlist
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = string.Empty;
 
-    }
+    [JsonPropertyName("eventDate")]
+    public string EventDate { get; set; } = string.Empty;
 
-    public class Setlist
-    {
-        [JsonPropertyName("id")]
-        public string Id { get; set; }
+    [JsonPropertyName("artist")]
+    public SetlistArtist Artist { get; set; } = new SetlistArtist();
 
-        [JsonPropertyName("eventDate")]
-        public string EventDate { get; set; }
+    [JsonPropertyName("venue")]
+    public SetlistVenue Venue { get; set; } = new SetlistVenue();
 
-        [JsonPropertyName("artist")]
-        public SetlistArtist Artist { get; set; }
+    [JsonPropertyName("tour")]
+    public SetlistTour Tour { get; set; } = new SetlistTour();
 
-        [JsonPropertyName("venue")]
-        public SetlistVenue Venue { get; set; }
+    [JsonPropertyName("sets")]
+    public SetlistSets Sets { get; set; } = new SetlistSets();
 
-        [JsonPropertyName("tour")]
-        public SetlistTour Tour { get; set; }
+    [JsonPropertyName("url")]
+    public string Url { get; set; } = string.Empty;
+    public List<SetlistSong> Songs => Sets.Sets.SelectMany(_ => _.Songs).ToList();
+}
 
-        [JsonPropertyName("sets")]
-        public SetlistSets Sets { get; set; }
+public class SetlistSets
+{
+    [JsonPropertyName("set")]
+    public List<SetlistSet> Sets { get; set; } = new List<SetlistSet>();
+}
 
-        [JsonPropertyName("url")]
-        public string Url { get; set; }
-        public List<SetlistSong> Songs => Sets.Sets.SelectMany(_ => _.Songs).ToList();
-    }
+public class SetlistSet
+{
+    [JsonPropertyName("encore")]
+    public int? Encore { get; set; }
 
-    public class SetlistSets
-    {
-        [JsonPropertyName("set")]
-        public List<SetlistSet> Sets { get; set; } = new List<SetlistSet>();
-    }
+    [JsonPropertyName("song")]
+    public List<SetlistSong> Songs { get; set; } = new List<SetlistSong>();
+}
 
-    public class SetlistSet
-    {
-        [JsonPropertyName("encore")]
-        public int? Encore { get; set; }
+public class SetlistCover
+{
+}
 
-        [JsonPropertyName("song")]
-        public List<SetlistSong> Songs { get; set; }
-    }
+public class SetlistSong
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
 
-    public class SetlistCover
-    {
+    [JsonPropertyName("tape")]
+    public bool Tape { get; set; }
+}
 
-    }
+public class SetlistArtist
+{
+    [JsonPropertyName("mbid")]
+    public string Mbid { get; set; } = string.Empty;
 
-    public class SetlistSong
-    {
-        [JsonPropertyName("name")]
-        public string Name { get; set; }
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
 
-        [JsonPropertyName("tape")]
-        public bool Tape { get; set; }
-    }
+    [JsonPropertyName("url")]
+    public string Url { get; set; } = string.Empty;
+}
 
-    public class SetlistArtist
-    {
-        [JsonPropertyName("mbid")]
-        public string Mbid { get; set; }
+public class SetlistVenue
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = string.Empty;
 
-        [JsonPropertyName("name")]
-        public string Name { get; set; }
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
 
-        [JsonPropertyName("url")]
-        public string Url { get; set; }
-    }
+    [JsonPropertyName("city")]
+    public SetlistCity City { get; set; } = new SetlistCity();
+}
 
-    public class SetlistVenue
-    {
-        [JsonPropertyName("id")]
-        public string Id { get; set; }
+public class SetlistTour
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+}
 
-        [JsonPropertyName("name")]
-        public string Name { get; set; }
+public class SetlistCountry
+{
+    [JsonPropertyName("code")]
+    public string Code { get; set; } = string.Empty;
 
-        [JsonPropertyName("city")]
-        public SetlistCity City { get; set; }
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+}
 
-    }
+public class SetlistCity
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = string.Empty;
 
-    public class SetlistTour
-    {
-        [JsonPropertyName("name")]
-        public string Name { get; set; }
-    }
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
 
-    public class SetlistCountry
-    {
-        [JsonPropertyName("code")]
-        public string Code { get; set; }
-
-        [JsonPropertyName("name")]
-        public string Name { get; set; }
-    }
-
-    public class SetlistCity
-    {
-        [JsonPropertyName("id")]
-        public string Id { get; set; }
-
-        [JsonPropertyName("name")]
-        public string Name { get; set; }
-
-        [JsonPropertyName("country")]
-        public SetlistCountry Country { get; set; }
-    }
-
+    [JsonPropertyName("country")]
+    public SetlistCountry Country { get; set; } = new SetlistCountry();
 }
