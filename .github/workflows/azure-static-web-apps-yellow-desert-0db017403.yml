@@ -30,7 +30,7 @@ jobs:
           # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
           app_location: "." # or "src/YourBlazorProject"
           # api_location: "api" # Remove or comment out if not used
-          output_location: "bin/Release/net9.0/publish/wwwroot"
+          output_location: "bin/Release/net9.0/browser-wasm/publish"
           ###### End of Repository/Build Configurations ######
 
   close_pull_request_job:
