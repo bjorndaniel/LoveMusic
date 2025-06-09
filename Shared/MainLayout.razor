@@ -58,7 +58,7 @@
         </div>
     </MediaQueryList>
     @code{
-        private static Action Failed;
+        private static Action? Failed;
         protected override void OnInitialized()
         {
             Failed = SpotifyConnectionFailed;
@@ -73,7 +73,7 @@
         [JSInvokable]
         public static async Task<bool> ConnectionError()
         {
-            Failed.Invoke();
+            Failed?.Invoke();
             return await Task.FromResult(true);
         }
     }

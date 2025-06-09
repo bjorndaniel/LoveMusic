@@ -64,21 +64,21 @@
 </main>
 
 @code {
-    private SpotifyPlaylist Playlist { get; set; }
+    private SpotifyPlaylist Playlist { get; set; } = new();
     private string ImageUrl { get; set; } = "/img/icon180.png";
     private string Track { get; set; } = "Nothing playing";
-    private string Artist { get; set; }
+    private string Artist { get; set; } = string.Empty; 
     private bool IsPlaying { get; set; }
     private string PlayIcon => IsPlaying ? "oi-media-pause" : "oi-media-play";
     private string NowPlayingClass => Playlist == null ? "hide" : "";
-    private static Func<Task> Update;
-    private static Func<Task> PlayAction;
-    private static Func<Task> UnsupportedAction;
-    private string PlayerHeader { get; set; }
-    private List<SpotifyPlaylist> Playlists { get; set; } = new List<SpotifyPlaylist>();
+    private static Func<Task>? Update;
+    private static Func<Task>? PlayAction;
+    private static Func<Task>? UnsupportedAction;
+    private string PlayerHeader { get; set; } = string.Empty;
+    private List<SpotifyPlaylist> Playlists { get; set; } = [];
     [Parameter]
     public bool? Play { get; set; }
-    
+
     protected override async Task OnInitializedAsync()
     {
         var token = await LocalStore.GetItemAsync<string>("SpotifyToken");
@@ -91,7 +91,7 @@
                 var images = await Spotify.GetImages(Playlist.Id);
                 if (images?.Any() ?? false)
                 {
-                    ImageUrl = images.OrderByDescending(_ => _.Height).FirstOrDefault()?.Url;
+                    ImageUrl = images.OrderByDescending(_ => _.Height).FirstOrDefault()?.Url ?? string.Empty;
                 }
                 if (Play??false)
                 {
@@ -200,14 +200,8 @@
     }
 
     [JSInvokable]
-    public static async Task Unsupported()
-    {
-        await UnsupportedAction.Invoke();
-    }
+    public static async Task Unsupported() => await UnsupportedAction?.Invoke()!;
 
     [JSInvokable]
-    public static async Task UpdateUI()
-    {
-        await Update.Invoke();
-    }
+    public static async Task UpdateUI() => await Update?.Invoke()!;
 }

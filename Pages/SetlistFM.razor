@@ -163,24 +163,24 @@
 <MediaQuery Media="@Breakpoints.XSmallDown" @bind-Matches="IsSmall" />
 @code
 {
-    private string HeaderCollapse { get; set; }
-    private string ArtistName { get; set; }
-    private string CityName { get; set; }
-    private string VenueName { get; set; }
+    private string HeaderCollapse { get; set; } = string.Empty;
+    private string ArtistName { get; set; } = string.Empty;
+    private string CityName { get; set; } = string.Empty;
+    private string VenueName { get; set; } = string.Empty;
     private bool IsDisabled => string.IsNullOrWhiteSpace(ArtistName) || string.IsNullOrWhiteSpace(CityName);
     private string ShowLoading { get; set; } = "hide";
     private string ShowResults { get; set; } = "hide";
     private string ShowNoResult { get; set; } = "hide";
     private string ShowPlay { get; set; } = "hide";
-    private string ShowPager { get; set; }
-    private string LoadingMessage { get; set; }
-    private string LoadingText { get; set; }
+    private string ShowPager { get; set; } = string.Empty;
+    private string LoadingMessage { get; set; } = string.Empty;
+    private string LoadingText { get; set; } = string.Empty;
     private Dictionary<int, List<Setlist>> Setlists { get; set; } = new Dictionary<int, List<Setlist>>();
     private int CurrentPage { get; set; }
     private int TotalPages { get; set; }
     private bool IsSmall = false;
     private List<string> ResultMessages { get; set; } = new List<string>();
-    private SpotifyPlaylist Playlist { get; set; }
+    private SpotifyPlaylist? Playlist { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -208,7 +208,7 @@
                 ShowLoading = "hide";
                 break;
             default:
-                LoadingMessage = args.Messages.FirstOrDefault();
+                LoadingMessage = args.Messages.FirstOrDefault() ?? string.Empty;
                 StateHasChanged();
                 await Task.Delay(1);
                 break;
@@ -225,16 +225,16 @@
         Setlists = new Dictionary<int, List<Setlist>>();
         var result = await SetlistFm.Search(ArtistName, CityName, VenueName, 1);
         ShowLoading = "hide";
-        if (result.Total == 0)
+        if (result?.Total == 0)
         {
             ShowNoResult = string.Empty;
         }
         else
         {
             CurrentPage = 1;
-            TotalPages = result.Total > 0 ? result.Total / 5 : 0;
-            var pages = result.SetLists.ChunkBy(5);
-            for (var i = 1; i <= pages.Count(); i++)
+            TotalPages = result?.Total > 0 ? result.Total / 5 : 0;
+            var pages = result?.SetLists.ChunkBy(5);
+            for (var i = 1; i <= pages?.Count(); i++)
             {
                 Setlists.Add(i, pages[i - 1]);
             }
@@ -246,7 +246,7 @@
     private async Task Create(string id)
     {
         var list = Setlists[CurrentPage].FirstOrDefault(_ => _.Id == id);
-        if (list.Songs.Count() == 0)
+        if (list?.Songs.Count() == 0)
         {
             Toast.ShowWarning("The list contains no songs");
             return;
@@ -255,7 +255,7 @@
         ShowNoResult = "hide";
         ShowPager = "hide";
         ShowLoading = string.Empty;
-        Playlist = await Spotify.CreatePlaylistSFM($"{list.Artist.Name} {list.Venue.Name} {list.EventDate}", list);
+        Playlist = (await Spotify.CreatePlaylistSFM($"{list?.Artist.Name} {list?.Venue.Name} {list?.EventDate}", list!))!;
         await LocalStore.SetItemAsync("SpotifyPlaylist", Playlist);
         ShowPlay = string.Empty;
     }
@@ -309,9 +309,9 @@
                 page = (CurrentPage / 4) + 1;
             }
             var result = await SetlistFm.Search(ArtistName, CityName, VenueName, page);
-            var pages = result.SetLists.ChunkBy(5);
+            var pages = result?.SetLists.ChunkBy(5);
             var counter = page * 4 - 3;
-            for (var i = 0; i < pages.Count(); i++)
+            for (var i = 0; i < pages?.Count(); i++)
             {
                 Setlists.Add(counter, pages[i]);
                 counter++;

@@ -1,34 +1,29 @@
-using System.Collections.Generic;
-using System.Text.Json.Serialization;
+namespace LoveMusic;
 
-namespace LoveMusic
+public class CreateSpotifyPlaylist
 {
-    public class CreateSpotifyPlaylist
-    {
-        [JsonPropertyName("name")]
-        public string Name { get; set; }
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
 
-        [JsonPropertyName("public")]
-        public bool Public { get; set; }
-
-    }
+    [JsonPropertyName("public")]
+    public bool Public { get; set; }
 }
 
 public class SpotifyPlaylist
 {
     [JsonPropertyName("id")]
-    public string Id { get; set; }
+    public string Id { get; set; } = string.Empty;
 
     [JsonPropertyName("name")]
-    public string Name { get; set; }
+    public string Name { get; set; } = string.Empty;
 
     [JsonPropertyName("uri")]
-    public string Uri { get; set; }
+    public string Uri { get; set; } = string.Empty;
 }
 
 public class SpotifyPlayUri
 {
-    public string context_uri { get; set; }
+    public string context_uri { get; set; } = string.Empty;
 }
 
 public class SpotifyImage
@@ -40,7 +35,7 @@ public class SpotifyImage
     public int Width { get; set; }
 
     [JsonPropertyName("url")]
-    public string Url { get; set; }
+    public string Url { get; set; } = string.Empty;
 }
 
 public class SpotifyPlaylistResult

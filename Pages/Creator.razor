@@ -110,20 +110,20 @@
 </main>
 @code{
     private PlaylistType SelectedType { get; set; }
-    private string UserName { get; set; }
-    private string ShowUser { get; set; }
+    private string UserName { get; set; } = string.Empty;   
+    private string ShowUser { get; set; } = string.Empty;
     private string ShowCreate { get; set; } = "hide";
     private string ShowLoading { get; set; } = "hide";
     private string ShowResult { get; set; } = "hide";
     private long TotalTracks { get; set; }
     private int? ToAdd { get; set; }
-    private string PlaylistName { get; set; }
+    private string PlaylistName { get; set; } = string.Empty;
     private int NotFound { get; set; }
-    private string LoadingMessage { get; set; }
-    private string LoadingText { get; set; }
+    private string LoadingMessage { get; set; } = "...";
+    private string LoadingText { get; set; } = "Loading...";
     private bool CreateDisabled => !(TotalTracks > 0 && ToAdd > 0 && !string.IsNullOrEmpty(PlaylistName));
     private List<string> ResultMessages { get; set; } = new List<string>();
-    private SpotifyPlaylist Playlist { get; set; }
+    private SpotifyPlaylist Playlist { get; set; } = new();
     private bool DisablePlay { get; set; }
     protected override async Task OnInitializedAsync()
     {
@@ -182,7 +182,7 @@
         ShowLoading = "";
         ShowCreate = "hide";
         var lastFmTracks = await LastFm.GetTracksList(SelectedType, UserName, ToAdd??1);
-        Playlist = await Spotify.CreatePlaylist(PlaylistName, lastFmTracks);
+        Playlist = (await Spotify.CreatePlaylist(PlaylistName, lastFmTracks))!;
         await LocalStore.SetItemAsync("SpotifyPlaylist", Playlist);
         GoBack();
     }
@@ -196,7 +196,7 @@
                 ShowLoading = "hide";
                 break;
             default:
-                LoadingMessage = args.Messages.FirstOrDefault();
+                LoadingMessage = args.Messages.FirstOrDefault() ?? string.Empty;
                 StateHasChanged();
                 await Task.Delay(1);
                 break;
