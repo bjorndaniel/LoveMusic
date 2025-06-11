@@ -1,0 +1,10 @@
+global using Microsoft.Extensions.Logging;
+global using Microsoft.Azure.Functions.Worker;
+global using Microsoft.AspNetCore.Mvc;
+global using Microsoft.AspNetCore.Http;
+global using static System.Runtime.InteropServices.JavaScript.JSType;
+global using System.Text.Json;
+global using Microsoft.Azure.Functions.Worker.Builder;
+global using Microsoft.Extensions.Hosting;
+global using Microsoft.Azure.Functions.Worker.Middleware;
+global using System.Web;
