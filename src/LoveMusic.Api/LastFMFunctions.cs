@@ -92,4 +92,12 @@ public class LastFMFunctions
             return new BadRequestObjectResult("Username and method are required");
         }
     }
+
+    [Function("ping")]
+    public IActionResult Ping([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "ping")] HttpRequest req)
+    {
+        _logger.LogInformation("Ping called");
+        return new OkObjectResult("pong");
+    }
+
 }
