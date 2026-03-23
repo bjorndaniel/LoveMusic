@@ -1,7 +1,7 @@
 ﻿@page "/"
 @inject IConfiguration Config
-
 @inject NavigationManager Navigation
+@inject Blazored.LocalStorage.ILocalStorageService LocalStore
 
 <main role="main" class="inner cover">
     <h1 class="cover-heading">Bringing your last.fm lists to Spotify.</h1>
@@ -14,10 +14,33 @@
     </p>
 </main>
 @code{
-    public void Connect()
+    public async Task Connect()
     {
         var clientId = Config["Client"];
         var redirectUrl = Config["Redirect"];
-        Navigation.NavigateTo($"https://accounts.spotify.com/authorize?client_id={clientId}&redirect_uri={redirectUrl}&scope=playlist-read-private%20playlist-read-collaborative%20user-modify-playback-state%20streaming%20user-read-email%20user-read-private%20playlist-modify-public%20playlist-modify-private%20&response_type=token&state=123");
+
+        var codeVerifier = GenerateCodeVerifier();
+        var codeChallenge = GenerateCodeChallenge(codeVerifier);
+        await LocalStore.SetItemAsync("SpotifyCodeVerifier", codeVerifier);
+
+        var scopes = "playlist-read-private playlist-read-collaborative user-modify-playback-state streaming user-read-email user-read-private playlist-modify-public playlist-modify-private";
+        Navigation.NavigateTo(
+            $"https://accounts.spotify.com/authorize?client_id={clientId}&redirect_uri={Uri.EscapeDataString(redirectUrl!)}&scope={Uri.EscapeDataString(scopes)}&response_type=code&code_challenge_method=S256&code_challenge={codeChallenge}&state=123");
     }
+
+    private static string GenerateCodeVerifier()
+    {
+        var bytes = new byte[32];
+        System.Security.Cryptography.RandomNumberGenerator.Fill(bytes);
+        return Base64UrlEncode(bytes);
+    }
+
+    private static string GenerateCodeChallenge(string codeVerifier)
+    {
+        var hash = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.ASCII.GetBytes(codeVerifier));
+        return Base64UrlEncode(hash);
+    }
+
+    private static string Base64UrlEncode(byte[] bytes) =>
+        Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 }
