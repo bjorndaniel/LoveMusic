@@ -48,12 +48,19 @@ public class LastFmService
 
     public async Task<long> GetTrackCount(PlaylistType type, string lastFmUser)
     {
-        var method = Extensions.GetAttributeNameProperty<PlaylistType, LastFmMethod>(type.ToString());
-        var result = await _client.GetAsync($"{_apiUrl}/lastfm/count?user={lastFmUser}&method={method}");
-        if(result.IsSuccessStatusCode)
+        try
         {
-            var model = JsonSerializer.Deserialize<LastFmCount>(await result.Content.ReadAsStringAsync());
-            return model?.Count ?? 0;
+            var method = Extensions.GetAttributeNameProperty<PlaylistType, LastFmMethod>(type.ToString());
+            var result = await _client.GetAsync($"{_apiUrl}/lastfm/count?user={lastFmUser}&method={method}");
+            if(result.IsSuccessStatusCode)
+            {
+                var model = JsonSerializer.Deserialize<LastFmCount>(await result.Content.ReadAsStringAsync());
+                return model?.Count ?? 0;
+            }
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error fetching track count: {ex.Message}");
         }
         return 0;
     }
