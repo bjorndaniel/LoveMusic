@@ -60,7 +60,7 @@
                                     <input type="text" class="form-control" placeholder="Search Spotify..."
                                            @bind="track.SearchQuery"
                                            @bind:event="oninput"
-                                           @onkeyup="async e => { if (e.Key == \"Enter\") await SearchAlternatives(track); }" />
+                                           @onkeyup="e => HandleKeyUp(e, track)" />
                                     <div class="input-group-append">
                                         <button class="btn btn-secondary btn-sm" @onclick="() => SearchAlternatives(track)">Search</button>
                                     </div>
@@ -129,6 +129,12 @@
         track.Selected = true;
         track.ShowAlternatives = false;
         track.Alternatives = [];
+    }
+
+    private async Task HandleKeyUp(KeyboardEventArgs e, SelectableTrack track)
+    {
+        if (e.Key == "Enter")
+            await SearchAlternatives(track);
     }
 
     private async Task Confirm() => await OnConfirm.InvokeAsync();

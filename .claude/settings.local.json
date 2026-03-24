@@ -8,7 +8,8 @@
       "Bash(git -C C:/Projects/bjorndaniel/LoveMusic show 9954566 --stat | head -20)",
       "Bash(git -C C:/Projects/bjorndaniel/LoveMusic log --oneline --all | head -20)",
       "Bash(git -C C:/Projects/bjorndaniel/LoveMusic show 654d543:.github/workflows/azure-static-web-apps-yellow-desert-0db017403.yml 2>/dev/null || git -C C:/Projects/bjorndaniel/LoveMusic show 3cadb47 --stat)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(dotnet test:*)"
     ]
   }
 }
