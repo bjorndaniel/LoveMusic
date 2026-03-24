@@ -131,6 +131,11 @@
             <p class="lead">No result found</p>
         </div>
     </div>
+    <div class="row justify-content-center @(ShowSelector)">
+        <div class="col-sm-12 col-md-10 col-lg-8">
+            <TrackSelector Tracks="_previewTracks" OnConfirm="ConfirmCreate" OnCancel="CancelSelector" />
+        </div>
+    </div>
     <div class="row @(ShowLoading)">
         <div class="col text-center ">
             <br />
@@ -181,6 +186,9 @@
     private bool IsSmall = false;
     private List<string> ResultMessages { get; set; } = new List<string>();
     private SpotifyPlaylist? Playlist { get; set; }
+    private List<SelectableTrack> _previewTracks = [];
+    private string _pendingPlaylistName = string.Empty;
+    private string ShowSelector { get; set; } = "hide";
 
     protected override async Task OnInitializedAsync()
     {
@@ -255,9 +263,32 @@
         ShowNoResult = "hide";
         ShowPager = "hide";
         ShowLoading = string.Empty;
-        Playlist = (await Spotify.CreatePlaylistSFM($"{list?.Artist.Name} {list?.Venue.Name} {list?.EventDate}", list!))!;
+        _pendingPlaylistName = $"{list?.Artist.Name} {list?.Venue.Name} {list?.EventDate}";
+        _previewTracks = list!.Songs
+            .Select(s => new SelectableTrack { Artist = list.Artist.Name, Name = s.Name })
+            .ToList();
+        await Spotify.PreviewTracks(_previewTracks);
+        ShowLoading = "hide";
+        ShowSelector = string.Empty;
+    }
+
+    private async Task ConfirmCreate()
+    {
+        ShowSelector = "hide";
+        ShowLoading = string.Empty;
+        Playlist = (await Spotify.CreatePlaylistFromSelected(_pendingPlaylistName, _previewTracks))!;
         await LocalStore.SetItemAsync("SpotifyPlaylist", Playlist);
+        ShowLoading = "hide";
         ShowPlay = string.Empty;
+    }
+
+    private void CancelSelector()
+    {
+        ShowSelector = "hide";
+        ShowResults = string.Empty;
+        ShowPager = string.Empty;
+        _previewTracks = [];
+        _pendingPlaylistName = string.Empty;
     }
 
     private async Task ConnectAndPlay()
