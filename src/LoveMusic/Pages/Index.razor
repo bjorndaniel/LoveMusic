@@ -25,7 +25,8 @@
 
         var scopes = "playlist-read-private playlist-read-collaborative user-modify-playback-state streaming user-read-email user-read-private playlist-modify-public playlist-modify-private";
         Navigation.NavigateTo(
-            $"https://accounts.spotify.com/authorize?client_id={clientId}&redirect_uri={Uri.EscapeDataString(redirectUrl!)}&scope={Uri.EscapeDataString(scopes)}&response_type=code&code_challenge_method=S256&code_challenge={codeChallenge}&state=123");
+            $"https://accounts.spotify.com/authorize?client_id={clientId}&redirect_uri={Uri.EscapeDataString(redirectUrl!)}&scope={Uri.EscapeDataString(scopes)}&response_type=code&code_challenge_method=S256&code_challenge={codeChallenge}&state=123",
+            forceLoad: true);
     }
 
     private static string GenerateCodeVerifier()
