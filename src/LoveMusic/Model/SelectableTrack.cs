@@ -7,4 +7,7 @@ public class SelectableTrack
     public SpotifyTrack? SpotifyResult { get; set; }
     public bool Selected { get; set; } = true;
     public bool NotFound => SpotifyResult?.NotFound ?? false;
+    public List<SpotifyTrack> Alternatives { get; set; } = [];
+    public bool ShowAlternatives { get; set; }
+    public string SearchQuery { get; set; } = string.Empty;
 }

@@ -222,11 +222,13 @@ public class SpotifyService
     {
         try
         {
-            var sResult = await _client.GetStringAsync($"{_baseUrl}/search?q={artist} {track}&type=track&limit=3");
+            var sResult = await _client.GetStringAsync($"{_baseUrl}/search?q={artist} {track}&type=track&limit=10");
             var spotifyTracks = JsonSerializer.Deserialize<SpotifyTrackSearchResult>(sResult);
-            if(spotifyTracks?.SpotifyTracks.Total > 0)
+            var tracks = spotifyTracks?.SpotifyTracks.Tracks.ToList() ?? [];
+            if (tracks.Count > 0)
             {
-                return spotifyTracks.SpotifyTracks.Tracks.First();
+                var nonLive = tracks.FirstOrDefault(t => !t.Name.Contains("live", StringComparison.OrdinalIgnoreCase));
+                return nonLive ?? tracks.First();
             }
         }
         catch(Exception e)
@@ -239,6 +241,21 @@ public class SpotifyService
             Name = $"{track} NOT FOUND!!!!!",
             NotFound = true
         };
+    }
+
+    public async Task<List<SpotifyTrack>> SearchAlternatives(string query)
+    {
+        try
+        {
+            var sResult = await _client.GetStringAsync($"{_baseUrl}/search?q={Uri.EscapeDataString(query)}&type=track&limit=5");
+            var spotifyTracks = JsonSerializer.Deserialize<SpotifyTrackSearchResult>(sResult);
+            return spotifyTracks?.SpotifyTracks.Tracks.ToList() ?? [];
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return [];
+        }
     }
 
     public async Task Play(string playlistUri)

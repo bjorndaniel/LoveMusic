@@ -1,3 +1,5 @@
+@inject SpotifyService Spotify
+
 <div class="row mb-2">
     <div class="col">
         <h4>Select tracks</h4>
@@ -18,21 +20,66 @@
 </div>
 <div class="row mb-3">
     <div class="col">
-        <div style="max-height:400px;overflow-y:auto;">
+        <div style="max-height:500px;overflow-y:auto;">
             <ul class="list-unstyled mb-0">
                 @foreach (var track in Tracks)
                 {
-                    <li class="d-flex align-items-center py-1 @(track.NotFound ? "text-muted-app" : "")">
-                        <input type="checkbox"
-                               class="mr-2"
-                               checked="@track.Selected"
-                               disabled="@track.NotFound"
-                               @onchange="e => track.Selected = (bool)(e.Value ?? false)" />
-                        <span>@track.Name</span>
-                        <small class="ml-2 text-muted-app">&mdash; @track.Artist</small>
-                        @if (track.NotFound)
+                    <li class="py-2 @(track.NotFound ? "text-muted-app" : "")" style="border-bottom:1px solid rgba(255,255,255,0.1)">
+                        <div class="d-flex align-items-center">
+                            <input type="checkbox"
+                                   class="mr-2"
+                                   checked="@track.Selected"
+                                   disabled="@track.NotFound"
+                                   @onchange="e => track.Selected = (bool)(e.Value ?? false)" />
+                            <div class="flex-grow-1">
+                                <span>@track.Name</span>
+                                <small class="ml-2 text-muted-app">&mdash; @track.Artist</small>
+                                @if (!track.NotFound && track.SpotifyResult != null)
+                                {
+                                    <div>
+                                        <small class="text-muted-app" style="font-size:0.75em;">
+                                            Spotify: @track.SpotifyResult.Name &mdash; @track.SpotifyResult.Artists.FirstOrDefault()?.Name
+                                        </small>
+                                    </div>
+                                }
+                                @if (track.NotFound)
+                                {
+                                    <span class="badge badge-warning ml-2">Not found</span>
+                                }
+                            </div>
+                            <button class="btn btn-outline-secondary btn-sm ml-2"
+                                    @onclick="() => ToggleAlternatives(track)"
+                                    title="Find alternatives">
+                                @(track.ShowAlternatives ? "▲" : "⟳")
+                            </button>
+                        </div>
+                        @if (track.ShowAlternatives)
                         {
-                            <span class="badge badge-warning ml-2">Not found</span>
+                            <div class="mt-2 ml-4">
+                                <div class="input-group input-group-sm mb-2">
+                                    <input type="text" class="form-control" placeholder="Search Spotify..."
+                                           @bind="track.SearchQuery"
+                                           @bind:event="oninput"
+                                           @onkeyup="async e => { if (e.Key == \"Enter\") await SearchAlternatives(track); }" />
+                                    <div class="input-group-append">
+                                        <button class="btn btn-secondary btn-sm" @onclick="() => SearchAlternatives(track)">Search</button>
+                                    </div>
+                                </div>
+                                @if (track.Alternatives.Count > 0)
+                                {
+                                    <ul class="list-unstyled mb-0">
+                                        @foreach (var alt in track.Alternatives)
+                                        {
+                                            <li class="py-1">
+                                                <button class="btn btn-link btn-sm p-0 text-left" style="color:inherit"
+                                                        @onclick="() => SelectAlternative(track, alt)">
+                                                    @alt.Name &mdash; <small>@alt.Artists.FirstOrDefault()?.Name</small>
+                                                </button>
+                                            </li>
+                                        }
+                                    </ul>
+                                }
+                            </div>
                         }
                     </li>
                 }
@@ -61,6 +108,27 @@
     {
         foreach (var t in Tracks)
             t.Selected = false;
+    }
+
+    private void ToggleAlternatives(SelectableTrack track)
+    {
+        track.ShowAlternatives = !track.ShowAlternatives;
+        if (track.ShowAlternatives && string.IsNullOrEmpty(track.SearchQuery))
+            track.SearchQuery = $"{track.Artist} {track.Name}";
+    }
+
+    private async Task SearchAlternatives(SelectableTrack track)
+    {
+        if (string.IsNullOrWhiteSpace(track.SearchQuery)) return;
+        track.Alternatives = await Spotify.SearchAlternatives(track.SearchQuery);
+    }
+
+    private void SelectAlternative(SelectableTrack track, SpotifyTrack alt)
+    {
+        track.SpotifyResult = alt;
+        track.Selected = true;
+        track.ShowAlternatives = false;
+        track.Alternatives = [];
     }
 
     private async Task Confirm() => await OnConfirm.InvokeAsync();
