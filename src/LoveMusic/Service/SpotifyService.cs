@@ -146,6 +146,78 @@ public class SpotifyService
         return created;
     }
 
+    public async Task<List<SelectableTrack>> PreviewTracks(List<SelectableTrack> tracks)
+    {
+        var token = await _localStore.GetItemAsync<string>(Constants.SpotifyTokenKey);
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        var processed = 0;
+        foreach (var track in tracks)
+        {
+            track.SpotifyResult = await SearchTrack(track.Artist, track.Name);
+            track.Selected = !track.NotFound;
+            processed++;
+            if (processed % 5 == 0 || processed == tracks.Count)
+            {
+                RequestRefresh?.Invoke(this, new MessageEventArgs
+                {
+                    Messages = [$"Searching {processed} of {tracks.Count}..."],
+                    Type = UIUpdateType.Processing
+                });
+            }
+        }
+        return tracks;
+    }
+
+    public async Task<SpotifyPlaylist?> CreatePlaylistFromSelected(string name, List<SelectableTrack> selected)
+    {
+        var toAdd = selected.Where(_ => _.Selected && !_.NotFound).ToList();
+        var token = await _localStore.GetItemAsync<string>(Constants.SpotifyTokenKey);
+        var user = await _localStore.GetItemAsync<SpotifyUser>(Constants.SpotifyUserKey);
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        var result = await _client.PostAsJsonAsync($"{_baseUrl}/users/{user.Id}/playlists", new CreateSpotifyPlaylist { Name = name });
+        if (!result.IsSuccessStatusCode)
+        {
+            RequestRefresh?.Invoke(this, new MessageEventArgs { Messages = ["Could not create playlist."] });
+            return null;
+        }
+        var created = JsonSerializer.Deserialize<SpotifyPlaylist>(await result.Content.ReadAsStringAsync());
+        var batch = new List<SpotifyTrack>();
+        var processed = 0;
+        foreach (var track in toAdd)
+        {
+            batch.Add(track.SpotifyResult!);
+            processed++;
+            if (batch.Count == 10)
+            {
+                var query = string.Join(',', batch.Select(_ => _.Uri));
+                await _client.PostAsync($"{_baseUrl}/playlists/{created?.Id}/tracks?uris={query}", new StringContent(""));
+                batch.Clear();
+                RequestRefresh?.Invoke(this, new MessageEventArgs
+                {
+                    Messages = [$"Added {processed} of {toAdd.Count}."],
+                    Type = UIUpdateType.Processing
+                });
+            }
+        }
+        if (batch.Any())
+        {
+            var query = string.Join(',', batch.Select(_ => _.Uri));
+            await _client.PostAsync($"{_baseUrl}/playlists/{created?.Id}/tracks?uris={query}", new StringContent(""));
+        }
+        var notFound = selected.Count(_ => _.NotFound || !_.Selected);
+        CreationDone?.Invoke(this, new MessageEventArgs
+        {
+            Type = UIUpdateType.Done,
+            Messages =
+            [
+                $"Your playlist {name} was created.",
+                $"{toAdd.Count} added.",
+                $"{notFound} tracks skipped or not found on Spotify.",
+            ]
+        });
+        return created;
+    }
+
     public async Task<SpotifyTrack> SearchTrack(string artist, string track)
     {
         try

@@ -59,10 +59,15 @@
                     </div>
                 </div>
                 <button  @onclick="GoBack" @onclick:preventDefault class="btn btn-primary">Back</button>
-                <button disabled="@CreateDisabled" type="submit" @onclick="CreateSpotifyPlaylist" @onclick:preventDefault class="btn btn-success">Create Spotify playlist</button>
+                <button disabled="@CreateDisabled" type="submit" @onclick="PreviewSpotifyTracks" @onclick:preventDefault class="btn btn-success">Preview tracks</button>
             </form>
         </div>
 
+    </div>
+    <div class="row justify-content-center @(ShowSelector)">
+        <div class="col-sm-12 col-md-10 col-lg-8">
+            <TrackSelector Tracks="_previewTracks" OnConfirm="ConfirmCreatePlaylist" OnCancel="CancelSelector" />
+        </div>
     </div>
     <br />
       <div class="row justify-content-center @(ShowResult)">
@@ -110,21 +115,23 @@
 </main>
 @code{
     private PlaylistType SelectedType { get; set; }
-    private string UserName { get; set; } = string.Empty;   
+    private string UserName { get; set; } = string.Empty;
     private string ShowUser { get; set; } = string.Empty;
     private string ShowCreate { get; set; } = "hide";
     private string ShowLoading { get; set; } = "hide";
     private string ShowResult { get; set; } = "hide";
+    private string ShowSelector { get; set; } = "hide";
     private long TotalTracks { get; set; }
     private int? ToAdd { get; set; }
     private string PlaylistName { get; set; } = string.Empty;
-    private int NotFound { get; set; }
     private string LoadingMessage { get; set; } = "...";
     private string LoadingText { get; set; } = "Loading...";
     private bool CreateDisabled => !(TotalTracks > 0 && ToAdd > 0 && !string.IsNullOrEmpty(PlaylistName));
     private List<string> ResultMessages { get; set; } = new List<string>();
+    private List<SelectableTrack> _previewTracks = [];
     private SpotifyPlaylist Playlist { get; set; } = new();
     private bool DisablePlay { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         var token = await LocalStore.GetItemAsync<string>("SpotifyToken");
@@ -142,6 +149,7 @@
             Navigation.NavigateTo("/");
         }
     }
+
     private async Task LoadLfmPlaylist()
     {
         ResultMessages.Clear();
@@ -162,30 +170,54 @@
             ShowUser = "hide";
             ShowCreate = string.Empty;
         }
-
         ShowLoading = "hide";
     }
+
     private void GoBack()
     {
         LoadingMessage = "...";
         UserName = string.Empty;
         SelectedType = PlaylistType.LovedTracks;
         ShowCreate = "hide";
+        ShowSelector = "hide";
         ShowUser = string.Empty;
         PlaylistName = string.Empty;
         ToAdd = null;
+        _previewTracks = [];
     }
-    private async Task CreateSpotifyPlaylist()
+
+    private async Task PreviewSpotifyTracks()
     {
-        LoadingText = "Creating playlist";
+        LoadingText = "Searching Spotify";
         LoadingMessage = "...";
         ShowLoading = "";
         ShowCreate = "hide";
-        var lastFmTracks = await LastFm.GetTracksList(SelectedType, UserName, ToAdd??1);
-        Playlist = (await Spotify.CreatePlaylist(PlaylistName, lastFmTracks))!;
+        var lastFmTracks = await LastFm.GetTracksList(SelectedType, UserName, ToAdd ?? 1);
+        _previewTracks = lastFmTracks
+            .Select(t => new SelectableTrack { Artist = t.Artist.Name, Name = t.Name })
+            .ToList();
+        await Spotify.PreviewTracks(_previewTracks);
+        ShowLoading = "hide";
+        ShowSelector = string.Empty;
+    }
+
+    private async Task ConfirmCreatePlaylist()
+    {
+        ShowSelector = "hide";
+        LoadingText = "Creating playlist";
+        LoadingMessage = "...";
+        ShowLoading = "";
+        Playlist = (await Spotify.CreatePlaylistFromSelected(PlaylistName, _previewTracks))!;
         await LocalStore.SetItemAsync("SpotifyPlaylist", Playlist);
         GoBack();
     }
+
+    private void CancelSelector()
+    {
+        ShowSelector = "hide";
+        ShowCreate = string.Empty;
+    }
+
     private async Task UpdateUI(object sender, MessageEventArgs args)
     {
         switch (args.Type)
@@ -202,6 +234,7 @@
                 break;
         }
     }
+
     private async Task ConnectAndPlay()
     {
         var token = await LocalStore.GetItemAsync<string>("SpotifyToken");

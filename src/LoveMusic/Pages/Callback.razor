@@ -1,36 +1,65 @@
-@page "/callback"  
-@inject IToastService Toast  
-@inject HttpClient Http  
-@inject NavigationManager Navigation  
-@inject Blazored.LocalStorage.ILocalStorageService LocalStore  
+@page "/callback"
+@inject IToastService Toast
+@inject HttpClient Http
+@inject IConfiguration Config
+@inject NavigationManager Navigation
+@inject Blazored.LocalStorage.ILocalStorageService LocalStore
 
 @code{
     private string Token { get; set; } = string.Empty;
     private SpotifyUser User { get; set; } = new();
 
-    protected override async Task OnInitializedAsync()  
-    {  
-        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);  
-        var query = uri.ToString().Split("#").LastOrDefault();  
-        if (QueryHelpers.ParseQuery(query).TryGetValue("access_token", out var token))  
-        {  
-            Token = token!;  
-            await LocalStore.SetItemAsync(Constants.SpotifyTokenKey, token.FirstOrDefault());  
-            await GetUser();  
-            Navigation.NavigateTo("/creator");  
-        }  
-        else  
-        {  
-            Toast.ShowError("Something went wrong. Try to connect Spotify again.");  
-            Navigation.NavigateTo("/");  
-        }  
-    }  
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("code", out var code))
+        {
+            var codeVerifier = await LocalStore.GetItemAsync<string>("SpotifyCodeVerifier");
+            var tokenResponse = await ExchangeCodeForToken(code!, codeVerifier!);
+            if (tokenResponse == null)
+            {
+                Toast.ShowError("Something went wrong. Try to connect Spotify again.");
+                Navigation.NavigateTo("/");
+                return;
+            }
+            Token = tokenResponse.AccessToken;
+            await LocalStore.SetItemAsync(Constants.SpotifyTokenKey, Token);
+            if (!string.IsNullOrEmpty(tokenResponse.RefreshToken))
+                await LocalStore.SetItemAsync(Constants.SpotifyRefreshTokenKey, tokenResponse.RefreshToken);
+            await LocalStore.RemoveItemAsync("SpotifyCodeVerifier");
+            await GetUser();
+            Navigation.NavigateTo("/creator");
+        }
+        else
+        {
+            Toast.ShowError("Something went wrong. Try to connect Spotify again.");
+            Navigation.NavigateTo("/");
+        }
+    }
 
-    private async Task GetUser()  
-    {  
-        Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Token);  
-        var result = await Http.GetStringAsync($"https://api.spotify.com/v1/me");  
-        User = JsonSerializer.Deserialize<SpotifyUser>(result)!;  
-        await LocalStore.SetItemAsync("SpotifyUser", User);  
-    }  
+    private async Task<SpotifyTokenResponse?> ExchangeCodeForToken(string code, string codeVerifier)
+    {
+        var clientId = Config["Client"];
+        var redirectUri = Config["Redirect"];
+        var response = await Http.PostAsync("https://accounts.spotify.com/api/token",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["grant_type"] = "authorization_code",
+                ["code"] = code,
+                ["redirect_uri"] = redirectUri!,
+                ["client_id"] = clientId!,
+                ["code_verifier"] = codeVerifier
+            }));
+        if (!response.IsSuccessStatusCode)
+            return null;
+        return JsonSerializer.Deserialize<SpotifyTokenResponse>(await response.Content.ReadAsStringAsync());
+    }
+
+    private async Task GetUser()
+    {
+        Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Token);
+        var result = await Http.GetStringAsync("https://api.spotify.com/v1/me");
+        User = JsonSerializer.Deserialize<SpotifyUser>(result)!;
+        await LocalStore.SetItemAsync("SpotifyUser", User);
+    }
 }

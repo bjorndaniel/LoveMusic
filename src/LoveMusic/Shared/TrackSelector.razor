@@ -1,0 +1,68 @@
+<div class="row mb-2">
+    <div class="col">
+        <h4>Select tracks</h4>
+        <p class="lead">
+            @Tracks.Count(t => t.Selected) of @Tracks.Count selected
+            @if (Tracks.Any(t => t.NotFound))
+            {
+                <span> &mdash; <span class="text-warning-app">@Tracks.Count(t => t.NotFound) not found on Spotify</span></span>
+            }
+        </p>
+    </div>
+</div>
+<div class="row mb-2">
+    <div class="col">
+        <button class="btn btn-secondary btn-sm mr-2" @onclick="SelectAll">Select all found</button>
+        <button class="btn btn-secondary btn-sm" @onclick="DeselectAll">Deselect all</button>
+    </div>
+</div>
+<div class="row mb-3">
+    <div class="col">
+        <div style="max-height:400px;overflow-y:auto;">
+            <ul class="list-unstyled mb-0">
+                @foreach (var track in Tracks)
+                {
+                    <li class="d-flex align-items-center py-1 @(track.NotFound ? "text-muted-app" : "")">
+                        <input type="checkbox"
+                               class="mr-2"
+                               checked="@track.Selected"
+                               disabled="@track.NotFound"
+                               @onchange="e => track.Selected = (bool)(e.Value ?? false)" />
+                        <span>@track.Name</span>
+                        <small class="ml-2 text-muted-app">&mdash; @track.Artist</small>
+                        @if (track.NotFound)
+                        {
+                            <span class="badge badge-warning ml-2">Not found</span>
+                        }
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col">
+        <button @onclick="Cancel" @onclick:preventDefault class="btn btn-primary mr-2">Back</button>
+        <button disabled="@(!Tracks.Any(t => t.Selected))" @onclick="Confirm" @onclick:preventDefault class="btn btn-success">Create playlist</button>
+    </div>
+</div>
+@code {
+    [Parameter] public List<SelectableTrack> Tracks { get; set; } = [];
+    [Parameter] public EventCallback OnConfirm { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private void SelectAll()
+    {
+        foreach (var t in Tracks.Where(t => !t.NotFound))
+            t.Selected = true;
+    }
+
+    private void DeselectAll()
+    {
+        foreach (var t in Tracks)
+            t.Selected = false;
+    }
+
+    private async Task Confirm() => await OnConfirm.InvokeAsync();
+    private async Task Cancel() => await OnCancel.InvokeAsync();
+}
